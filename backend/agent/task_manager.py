@@ -110,7 +110,7 @@ class TaskManager:
                     if event.content.parts and event.content.parts[0].text:
                         final_message = event.content.parts[0].text
                         logger.info(f"Agent response: {final_message}")
-                        
+
                         # Parse for interactive questions
                         parsed_interactive = self._parse_interactive_questions(final_message)
                         if parsed_interactive:
@@ -443,6 +443,13 @@ Respond as Riley would in this consultation context, using {user_name}'s actual 
 
     def _parse_interactive_questions(self, message: str) -> Optional[Dict[str, Any]]:
         """Parse interactive questions from agent response."""
+
+        # First, check if the message is HTML
+        if message.startswith("<!DOCTYPE html>"):
+            return {
+                "type": "html",
+                "html": message
+            }
         
         # Look for [RADIO_BUTTONS] tags
         radio_pattern = r'\[RADIO_BUTTONS\](.*?)\[/RADIO_BUTTONS\]'
