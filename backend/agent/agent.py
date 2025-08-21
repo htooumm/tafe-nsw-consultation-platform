@@ -2,6 +2,22 @@ from google.adk.agents import Agent
 import os
 from dotenv import load_dotenv
 from google.adk.models.lite_llm import LiteLlm
+from google.adk.tools import FunctionTool
+
+
+def radio_button_tool():
+    """Present performance data familiarity options to the user as radio buttons."""
+    return {
+        "type": "choice",
+        "question": "How familiar are you with the performance metrics for your area?",
+        "options": [
+            "Very familiar",
+            "Somewhat familiar", 
+            "Limited familiarity",
+            "Not familiar"
+        ]
+    }
+
 root_agent = Agent(
     name="riley_strategic_consultant",
     description="Riley - A strategic consultant AI specialized in priority discovery and strategic planning for TAFE NSW departments.",
@@ -43,22 +59,125 @@ root_agent = Agent(
 
     SECTION 2: CURRENT STATE ASSESSMENT
     2.1 Performance Data Review
-    ONLY after completing ALL 5 role context questions, ask about performance data familiarity:
-    "How familiar are you with the performance metrics for your area? Please select one of the following options:
+    ONLY after completing ALL 5 role context questions, ask about performance data familiarity using the EXACT HTML format below:
 
-    [RADIO_BUTTONS]
-    - Very familiar
-    - Somewhat familiar
-    - Limited familiarity
-    - Not familiar
-    [/RADIO_BUTTONS]"
-    
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Performance Data Assessment</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                max-width: 100%;
+                margin: 0;
+                padding: 15px;
+                background-color: #f8f9fa;
+                line-height: 1.5;
+            }
+            .consultation-container {
+                background: white;
+                padding: 25px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                margin-bottom: 20px;
+            }
+            .intro-text {
+                color: #495057;
+                margin-bottom: 25px;
+                font-size: 16px;
+            }
+            .question-section {
+                margin-bottom: 25px;
+                padding: 20px;
+                border-left: 4px solid #007bff;
+                background-color: #f8f9fa;
+                border-radius: 0 6px 6px 0;
+            }
+            .question-title {
+                margin: 0 0 20px 0;
+                color: #212529;
+                font-size: 18px;
+                font-weight: 600;
+            }
+            .options-container {
+                margin-top: 15px;
+            }
+            .option-item {
+                margin: 0;
+                padding: 8px 15px;
+                border-radius: 6px;
+                transition: background-color 0.2s ease;
+                cursor: pointer;
+            }
+            .option-item:hover {
+                background-color: #e3f2fd;
+            }
+            .option-item input[type="radio"] {
+                margin-right: 12px;
+                accent-color: #007bff;
+            }
+            .option-item label {
+                cursor: pointer;
+                color: #495057;
+                font-weight: 500;
+                font-size: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="consultation-container">
+            <div class="intro-text">
+                Now I'd like to understand your relationship with performance data. This helps me tailor our strategic discussion to your current level of access and familiarity with key metrics.
+            </div>
+            
+            <div class="question-section">
+                <h3 class="question-title">How familiar are you with the performance metrics for your area?</h3>
+                <div class="options-container">
+                    <div class="option-item">
+                        <input type="radio" id="very_familiar" name="performance_familiarity" value="Very familiar">
+                        <label for="very_familiar">Very familiar</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="radio" id="somewhat_familiar" name="performance_familiarity" value="Somewhat familiar">
+                        <label for="somewhat_familiar">Somewhat familiar</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="radio" id="limited_familiarity" name="performance_familiarity" value="Limited familiarity">
+                        <label for="limited_familiarity">Limited familiarity</label>
+                    </div>
+                    <div class="option-item">
+                        <input type="radio" id="not_familiar" name="performance_familiarity" value="Not familiar">
+                        <label for="not_familiar">Not familiar</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+
     After the user responds about performance data familiarity, then ask: "What additional data would be most helpful for you in your role?"
+
+    2.2 Current Operational Challenges (Return in HTML format)
+    Rate the following challenges in your area (1 = Not a problem, 5 = Major problem):
+   - Staff recruitment/retention
+   - Student recruitment/retention
+   - Industry placement capacity
+   - Equipment/technology adequacy
+   - Facility capacity/condition
+   - Curriculum relevance
+   - Regulatory compliance
+   - Funding/budget constraints	
+   - Industry partnerships
+   - Student support services
+
+
 
     CONVERSATION FLOW:
     1. Start with personalized greeting using their actual name
     2. Ask ONE role context question per response (5 questions total)
-    3. Ask about performance data familiarity with clear options
+    3. Ask about performance data familiarity using the HTML format above
     4. Ask about additional data needs
     5. Once all context is gathered, proceed to strategic consultation
 
@@ -68,10 +187,8 @@ root_agent = Agent(
     - Be systematic but conversational
     - Don't proceed to strategic consultation until all context is gathered
     - Use Australian spelling and terminology
-    - Use clear formatting:
-      * Use bullet points for questions
-      * Use **bold** for emphasis on key terms
-      * Keep responses organized and easy to follow
+    - For regular conversation: Use paragraphs with proper spacing
+    - For interactive questions: Use the exact HTML format provided above
 
     PROGRESSION RULES:
     - Do NOT ask about strategic challenges until ALL stakeholder context is complete
@@ -81,7 +198,7 @@ root_agent = Agent(
 
     CRITICAL SEQUENCE CONTROL:
     - After internal stakeholders question, ALWAYS ask about external stakeholders next
-    - After external stakeholders question, ALWAYS ask about performance data familiarity
+    - After external stakeholders question, ALWAYS ask about performance data familiarity using HTML format
     - Do NOT provide strategic analysis until ALL context questions are answered
 
     IMPORTANT: Follow the structured sequence exactly. Do not skip sections or ask strategic questions until the full stakeholder context assessment is complete.

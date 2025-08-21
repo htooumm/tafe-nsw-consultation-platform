@@ -3,6 +3,75 @@ import { AIService } from '../services/aiService';
 import { DataService } from '../services/supabase';
 import { Send, Download, Save, MessageCircle } from 'lucide-react';
 
+// Add CSS styles for better HTML formatting
+const conversationStyles = `
+  .conversation-message {
+    line-height: 1.3;
+  }
+  .conversation-message p {
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+  }
+  .conversation-message p:last-child {
+    margin-bottom: 0;
+  }
+  .conversation-message .consultation-container {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  .conversation-message .question-section {
+    margin: 0;
+    padding: 15px;
+    border-left: 3px solid #007bff;
+    background-color: #f8f9fa;
+    border-radius: 0 6px 6px 0;
+  }
+  .conversation-message .intro-text {
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #495057;
+  }
+  .conversation-message .question-title {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212529;
+  }
+  .conversation-message .options-container {
+    margin-top: 10px;
+  }
+  .conversation-message .option-item {
+    margin: 0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .conversation-message .option-item:hover {
+    background-color: #e3f2fd;
+  }
+  .conversation-message .option-item input[type="radio"] {
+    margin-right: 8px;
+    accent-color: #007bff;
+  }
+  .conversation-message .option-item label {
+    cursor: pointer;
+    color: #495057;
+    font-weight: 500;
+    font-size: 14px;
+    margin: 0;
+  }
+  .conversation-message * {
+    margin-top: 0;
+  }
+  .conversation-message h1, .conversation-message h2, .conversation-message h3 {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+`;
+
 const PriorityMatrix = ({ onBack }) => {
   const [currentStep, setCurrentStep] = useState('intro');
   const [stakeholderInfo, setStakeholderInfo] = useState({
@@ -24,10 +93,47 @@ const PriorityMatrix = ({ onBack }) => {
   const dataService = new DataService();
 
   // Format message to handle basic markdown-style formatting
+  // Update the formatMessage function to handle HTML with better styling
   const formatMessage = (message) => {
     if (!message) return '';
     
-    // Split by lines and process each line
+    // Check if the message contains HTML tags
+    if (message.includes('<') && message.includes('>')) {
+      // Add CSS classes to the container for better styling and remove submit buttons
+      let cleanedHtml = message;
+      
+      // Remove submit buttons from forms
+      cleanedHtml = cleanedHtml.replace(/<input[^>]*type=["']submit["'][^>]*>/gi, '');
+      
+      // If it's a complete HTML document, extract only the body content
+      if (cleanedHtml.includes('<!DOCTYPE') || cleanedHtml.includes('<html')) {
+        const bodyMatch = cleanedHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        if (bodyMatch) {
+          cleanedHtml = bodyMatch[1];
+        }
+      }
+      
+      return (
+        <div 
+          className="conversation-message"
+          dangerouslySetInnerHTML={{ __html: cleanedHtml }} 
+          style={{
+            lineHeight: '1.3',
+          }}
+          onClick={(e) => {
+            // Handle radio button clicks in HTML content
+            if (e.target.type === 'radio') {
+              const value = e.target.value;
+              if (value) {
+                handleRadioSelection(value);
+              }
+            }
+          }}
+        />
+      );
+    }
+    
+    // Original formatting logic for non-HTML messages (markdown-style)
     const lines = message.split('\n');
     const formattedLines = lines.map((line, index) => {
       let formattedLine = line;
@@ -37,7 +143,7 @@ const PriorityMatrix = ({ onBack }) => {
         const parts = line.match(/^(\d+\.\s)\*\*(.*?)\*\*:?\s*(.*)/);
         if (parts) {
           return (
-            <div key={index} className="mb-2">
+            <div key={index} className="mb-1">
               <span className="font-semibold text-blue-700">{parts[1]}</span>
               <span className="font-bold text-gray-900">{parts[2]}</span>
               {parts[3] && <span className="text-gray-800">: {parts[3]}</span>}
@@ -50,7 +156,7 @@ const PriorityMatrix = ({ onBack }) => {
       if (formattedLine.includes('**')) {
         const parts = formattedLine.split(/(\*\*.*?\*\*)/);
         return (
-          <div key={index} className="mb-1">
+          <div key={index} className="mb-0.5">
             {parts.map((part, partIndex) => {
               if (part.startsWith('**') && part.endsWith('**')) {
                 return <span key={partIndex} className="font-bold text-gray-900">{part.slice(2, -2)}</span>;
@@ -61,15 +167,135 @@ const PriorityMatrix = ({ onBack }) => {
         );
       }
       
-      // Handle regular lines with proper spacing
+      // Handle regular lines with minimal spacing
       if (line.trim() === '') {
-        return <div key={index} className="h-2"></div>; // Empty line spacing
+        return null; // Skip empty lines completely
       }
       
-      return <div key={index} className="mb-1">{line}</div>;
+      return <div key={index} className="mb-0.5">{line}</div>;
     });
     
-    return <div>{formattedLines}</div>;
+    // Filter out null values (empty lines)
+    const filteredLines = formattedLines.filter(line => line !== null);
+    
+    return <div className="leading-snug space-y-0.5">{filteredLines}</div>;
+  };
+
+  // Add this function to parse HTML and extract interactive elements
+  // Update the parseHtmlResponse function to automatically select radio options
+  const parseHtmlResponse = (htmlContent) => {
+    // Create a temporary div to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Check if there are radio buttons (in any form or structure)
+    const radioInputs = tempDiv.querySelectorAll('input[type="radio"]');
+    if (radioInputs.length > 0) {
+      // Extract question text - look for the question title or main text
+      let questionText = "";
+      const questionTitle = tempDiv.querySelector('.question-title, h3, .question');
+      if (questionTitle) {
+        questionText = questionTitle.textContent.trim();
+      } else {
+        // Fallback: extract text content before radio buttons
+        const allText = tempDiv.textContent || "";
+        const lines = allText.split('\n').map(line => line.trim()).filter(line => line);
+        questionText = lines.find(line => line.includes('?')) || lines[0] || "Please select an option:";
+      }
+      
+      // Extract options from radio buttons
+      const options = Array.from(radioInputs).map(input => {
+        const label = tempDiv.querySelector(`label[for="${input.id}"]`);
+        if (label) {
+          return label.textContent.trim();
+        }
+        return input.value || input.getAttribute('value') || 'Option';
+      });
+      
+      if (options.length > 0) {
+        return {
+          hasInteractive: true,
+          cleanMessage: questionText,
+          interactive: {
+            type: "choice",
+            question: questionText,
+            options: options
+          }
+        };
+      }
+    }
+    
+    return {
+      hasInteractive: false,
+      cleanMessage: htmlContent,
+      interactive: null
+    };
+  };
+
+  const handleRadioSelection = async (option) => {
+    setSelectedRadioOption(option);
+    setUserResponse(option); // Automatically fill the text box
+    
+    // Automatically send the response after a brief delay
+    setTimeout(async () => {
+      setIsLoading(true);
+      const newConversation = [
+        ...conversationHistory,
+        { sender: 'user', message: option, timestamp: new Date(), isInteractiveResponse: true },
+      ];
+      setConversationHistory(newConversation);
+
+      try {
+        const aiResult = await aiService.generateResponse(
+          option,
+          { 
+            ...stakeholderInfo, 
+            conversationHistory: newConversation,
+            user_id: stakeholderInfo.email || 'anonymous',
+            session_id: sessionId
+          },
+          'riley'
+        );
+
+        // Parse HTML response if it contains interactive elements
+        let interactive = aiResult.interactive_question_data;
+        let cleanMessage = aiResult.response;
+        
+        if (aiResult.response.includes('<form>') || aiResult.response.includes('<input type="radio"')) {
+          const parsed = parseHtmlResponse(aiResult.response);
+          if (parsed.hasInteractive) {
+            interactive = parsed.interactive;
+            cleanMessage = parsed.cleanMessage;
+          }
+        }
+
+        setConversationHistory(prev => [
+          ...prev,
+          { 
+            sender: 'ai', 
+            message: cleanMessage,
+            htmlMessage: aiResult.response,
+            timestamp: new Date(),
+            insights: aiResult.insights,
+            interactive: interactive
+          }
+        ]);
+        setSessionId(aiResult.sessionId);
+      } catch (e) {
+        console.error('Interactive response error:', e);
+        setConversationHistory(prev => [
+          ...prev,
+          { 
+            sender: 'ai', 
+            message: "Sorry, there was an error processing your selection.", 
+            timestamp: new Date()
+          }
+        ]);
+      }
+      setIsLoading(false);
+      setUserResponse(''); // Clear the text box
+      setSelectedRadioOption(null); // Reset selection
+    }, 500); // Small delay to show the selection
   };
 
   // Improved scroll to bottom function
@@ -143,7 +369,7 @@ const PriorityMatrix = ({ onBack }) => {
     setConversationHistory(newConversation);
 
     try {
-      console.log('Starting request...'); // Debug log
+      console.log('Starting request...'); 
       const aiResult = await aiService.generateResponse(
         outgoing,
         { 
@@ -155,17 +381,30 @@ const PriorityMatrix = ({ onBack }) => {
         'riley'
       );
 
-      console.log('Request completed, result:', aiResult); // Debug log
+      console.log('Request completed, result:', aiResult); 
+
+      // Parse HTML response if it contains interactive elements
+      let interactive = aiResult.interactive_question_data;
+      let cleanMessage = aiResult.response;
+      
+      if (aiResult.response.includes('<form>') || aiResult.response.includes('<input type="radio"')) {
+        const parsed = parseHtmlResponse(aiResult.response);
+        if (parsed.hasInteractive) {
+          interactive = parsed.interactive;
+          cleanMessage = parsed.cleanMessage;
+        }
+      }
 
       // Add AI response to conversation
       setConversationHistory(prev => [
         ...prev,
         { 
           sender: 'ai', 
-          message: aiResult.response, 
+          message: cleanMessage, // Use clean message without HTML form
+          htmlMessage: aiResult.response, // Store original HTML
           timestamp: new Date(),
           insights: aiResult.insights,
-          interactive: aiResult.interactive_question_data || null // Store interactive data if present
+          interactive: interactive
         }
       ]);
       setSessionId(aiResult.sessionId);
@@ -407,8 +646,10 @@ const PriorityMatrix = ({ onBack }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <>
+      <style>{conversationStyles}</style>
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Conversation Panel */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-sm border">
@@ -436,8 +677,11 @@ const PriorityMatrix = ({ onBack }) => {
                     <div className="text-sm whitespace-pre-wrap break-words">
                       {msg.isInteractiveResponse ? (
                         <span className="font-medium">{msg.message}</span>
-                      ) : (
+                      ) : msg.interactive ? (
+                        // Show clean message without HTML form for interactive responses
                         formatMessage(msg.message)
+                      ) : (
+                        formatMessage(msg.htmlMessage || msg.message)
                       )}
                     </div>
                     {msg.insights && msg.insights.length > 0 && (
@@ -470,54 +714,55 @@ const PriorityMatrix = ({ onBack }) => {
             </div>
             
             <div className="p-4 text-black border-t border-gray-200">
-              {conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].interactive ? (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-gray-700 mb-2">
+              {conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].interactive && 
+               (conversationHistory[conversationHistory.length - 1].interactive.type === "choice" || 
+                conversationHistory[conversationHistory.length - 1].interactive.type === "radio") ? (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-gray-700 font-medium">
                     {conversationHistory[conversationHistory.length - 1].interactive.question}
                   </p>
-                  <div className="flex flex-col gap-2">
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                     {conversationHistory[conversationHistory.length - 1].interactive.options.map((option, index) => (
-                      <label key={index} className="inline-flex items-center">
+                      <label 
+                        key={index} 
+                        className="flex items-center p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors"
+                      >
                         <input
                           type="radio"
-                          name="performanceFamiliarity" // Group radio buttons
+                          name="performanceFamiliarity"
                           value={option}
                           checked={selectedRadioOption === option}
-                          onChange={(e) => setSelectedRadioOption(e.target.value)}
-                          className="form-radio h-4 w-4 text-blue-600"
+                          onChange={(e) => handleRadioSelection(e.target.value)}
+                          className="form-radio h-4 w-4 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="ml-2 text-gray-700">{option}</span>
+                        <span className="ml-3 text-gray-700">{option}</span>
                       </label>
                     ))}
-                    <button
-                      onClick={handleInteractiveResponse} // Call without argument
-                      disabled={isLoading || !selectedRadioOption}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Submit
-                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 italic">
+                    Selecting an option will fill the text box below. You can then send it or modify it.
                   </div>
                 </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={userResponse}
-                    onChange={(e) => setUserResponse(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleUserResponse()}
-                    placeholder="Type your response..."
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={handleUserResponse}
-                    disabled={isLoading || !userResponse.trim()}
-                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+              ) : null}
+              
+              <div className="flex gap-2 mt-3">
+                <input
+                  type="text"
+                  value={userResponse}
+                  onChange={(e) => setUserResponse(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleUserResponse()}
+                  placeholder="Type your response..."
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleUserResponse}
+                  disabled={isLoading || !userResponse.trim()}
+                  className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -608,8 +853,9 @@ const PriorityMatrix = ({ onBack }) => {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

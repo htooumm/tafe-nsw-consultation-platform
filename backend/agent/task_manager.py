@@ -6,6 +6,7 @@ Handles consultation sessions and priority analysis.
 import os
 import logging
 import uuid
+import re
 from typing import Dict, Any, Optional, List
 
 from google.adk.agents import Agent
@@ -442,7 +443,6 @@ Respond as Riley would in this consultation context, using {user_name}'s actual 
 
     def _parse_interactive_questions(self, message: str) -> Optional[Dict[str, Any]]:
         """Parse interactive questions from agent response."""
-        import re
         
         # Look for [RADIO_BUTTONS] tags
         radio_pattern = r'\[RADIO_BUTTONS\](.*?)\[/RADIO_BUTTONS\]'
@@ -469,13 +469,26 @@ Respond as Riley would in this consultation context, using {user_name}'s actual 
                 if question_text.startswith('"') and question_text.endswith('"'):
                     question_text = question_text[1:-1]
                 
+                # Extract the last sentence that ends with a question mark as the actual question
+                question_sentences = question_text.split('.')
+                actual_question = ""
+                for sentence in reversed(question_sentences):
+                    sentence = sentence.strip()
+                    if sentence.endswith('?'):
+                        actual_question = sentence
+                        break
+                
+                # If no question mark found, use a default format
+                if not actual_question:
+                    actual_question = "Please select one of the following options:"
+                
                 # Remove the radio buttons section from the main message
                 clean_message = message.replace(radio_match.group(0), '').strip()
                 
                 return {
-                    "question": question_text,
+                    "type": "choice",  # Changed from "radio" to "choice" to match frontend expectations
+                    "question": actual_question,
                     "options": options,
-                    "type": "radio",
                     "clean_message": clean_message
                 }
         
