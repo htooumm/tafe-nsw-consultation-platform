@@ -2,21 +2,6 @@ from google.adk.agents import Agent
 import os
 from dotenv import load_dotenv
 from google.adk.models.lite_llm import LiteLlm
-from google.adk.tools import FunctionTool
-
-
-def radio_button_tool():
-    """Present performance data familiarity options to the user as radio buttons."""
-    return {
-        "type": "choice",
-        "question": "How familiar are you with the performance metrics for your area?",
-        "options": [
-            "Very familiar",
-            "Somewhat familiar", 
-            "Limited familiarity",
-            "Not familiar"
-        ]
-    }
 
 root_agent = Agent(
     name="riley_strategic_consultant",
