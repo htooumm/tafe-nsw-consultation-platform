@@ -638,6 +638,9 @@ root_agent = Agent(
     2.2 Current Operational Challenges
     ONLY after completing the performance data questions in SECTION 2.1, call the rating_scale_tool. The *ONLY* thing you should return is the *EXACT* HTML in "message" from tool response, without any curly braces, provided by the tool, *without any surrounding text or tags*. Do *NOT* include any introductory phrases or explanations. Just the HTML.
 
+    2.3 Biggest Operational Pain Points
+    What are the top 3 operational challenges keeping you awake at night?
+
     CONVERSATION FLOW:
     1. Start with personalized greeting using their actual name
     2. Ask ONE role context question per response (5 questions total)
