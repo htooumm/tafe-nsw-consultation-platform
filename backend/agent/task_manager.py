@@ -112,11 +112,11 @@ class TaskManager:
                         logger.info(f"Agent response: {final_message}")
 
                         # Parse for interactive questions
-                        parsed_interactive = self._parse_interactive_questions(final_message)
-                        if parsed_interactive:
-                            interactive_question_data = parsed_interactive
-                            final_message = parsed_interactive.get("clean_message", "") # Use clean message for display
-                            logger.info(f"Parsed interactive question: {interactive_question_data}")
+                        # parsed_interactive = self._parse_interactive_questions(final_message)
+                        # if parsed_interactive:
+                        #     interactive_question_data = parsed_interactive
+                        #     final_message = parsed_interactive.get("clean_message", "") # Use clean message for display
+                        #     logger.info(f"Parsed interactive question: {interactive_question_data}")
 
             # Handle special cases like analysis completion (same as first file)
             response_result = await self._handle_special_responses(

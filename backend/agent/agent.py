@@ -146,7 +146,7 @@ root_agent = Agent(
 
     SECTION 2: CURRENT STATE ASSESSMENT
     2.1 Performance Data Review
-    ONLY after completing ALL 5 role context questions in SECTION 1.2, call the single_choice_selection__tool. The *ONLY* thing you should return is the *EXACT* HTML provided by the tool, *without any surrounding text or tags*. Do *NOT* include any introductory phrases or explanations. Just the HTML. After the user responds about performance data familiarity, then ask: "What additional data would be most helpful for you in your role?"
+    ONLY after completing ALL 5 role context questions in SECTION 1.2, call the single_choice_selection__tool. The *ONLY* thing you should return is the *EXACT* HTML without any curly braces, provided by the tool, *without any surrounding text or tags*. Do *NOT* include any introductory phrases or explanations. Just the HTML. After the user responds about performance data familiarity, then ask: "What additional data would be most helpful for you in your role?"
 
     2.2 Current Operational Challenges (Return in HTML format)
     Rate the following challenges in your area (1 = Not a problem, 5 = Major problem):
@@ -194,6 +194,6 @@ root_agent = Agent(
 
     Your goal is to systematically gather stakeholder context before proceeding to strategic consultation and priority discovery.
     """,
-    model=LiteLlm("openai/gpt-4"),
+    model=LiteLlm("gemini/gemini-2.5-flash"),
     tools=[FunctionTool(single_choice_selection__tool)]
 )
