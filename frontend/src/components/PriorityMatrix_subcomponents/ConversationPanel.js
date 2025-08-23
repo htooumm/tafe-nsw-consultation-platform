@@ -50,17 +50,33 @@ const ConversationPanel = ({
         > 
           {conversationHistory.map((msg, index) => (
             <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-                msg.sender === 'user' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-900'
-              }`}>
+              <div
+                className={
+                  msg.interactive && msg.interactive.type === "rating_scale"
+                    ? `px-4 py-3 rounded-lg${msg.sender === 'user' ? ' bg-blue-600 text-white' : ' bg-gray-100 text-gray-900'}`
+                    : `max-w-xs lg:max-w-md px-4 py-3 rounded-lg${msg.sender === 'user' ? ' bg-blue-600 text-white' : ' bg-gray-100 text-gray-900'}`
+                }
+                style={
+                  msg.interactive && msg.interactive.type === "rating_scale"
+                    ? { width: '100vh' }
+                    : undefined
+                }
+              >
                 {msg.sender === 'ai' && (
                   <div className="text-xs text-gray-600 mb-1">Riley</div>
                 )}
                 <div className="text-sm whitespace-pre-wrap break-words">
                   {msg.isInteractiveResponse ? (
                     <span className="font-medium">{msg.message}</span>
+                  ) : msg.interactive && msg.interactive.type === "rating_scale" ? (
+                    <div className="mt-2">
+                      <iframe
+                        srcDoc={msg.interactive.htmlContent}
+                        className="w-full border-0 rounded-lg"
+                        style={{ height: '800px', minHeight: '600px' }}
+                        title="Rating Scale Form"
+                      />
+                    </div>
                   ) : (
                     <MessageFormatter 
                       message={msg.interactive ? msg.message : (msg.htmlMessage || msg.message)} 

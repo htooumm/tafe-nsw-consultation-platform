@@ -30,6 +30,24 @@ const PriorityMatrix = ({ onBack }) => {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
     
+    // Check for rating scale (submit button indicates rating form)
+    const submitBtn = tempDiv.querySelector('#submit-ratings, button[type="button"]');
+    if (submitBtn) {
+      const questionTitle = tempDiv.querySelector('.question-title, h3');
+      const questionText = questionTitle ? questionTitle.textContent.trim() : "Please rate the following challenges:";
+      
+      return {
+        hasInteractive: true,
+        cleanMessage: questionText,
+        interactive: {
+          type: "rating_scale",
+          question: questionText,
+          htmlContent: htmlContent
+        }
+      };
+    }
+    
+    // Check for single choice radio buttons (existing logic)
     const radioInputs = tempDiv.querySelectorAll('input[type="radio"]');
     if (radioInputs.length > 0) {
       let questionText = "";
@@ -133,6 +151,72 @@ const PriorityMatrix = ({ onBack }) => {
       setSelectedRadioOption(null);
     }, 500);
   };
+
+  // Add this function in PriorityMatrix.js
+  const handleRatingSubmission = async (ratingMessage) => {
+    setIsLoading(true);
+    const newConversation = [
+      ...conversationHistory,
+      { sender: 'user', message: ratingMessage, timestamp: new Date(), isInteractiveResponse: true },
+    ];
+    setConversationHistory(newConversation);
+
+    try {
+      const aiResult = await aiService.generateResponse(
+        ratingMessage,
+        { 
+          ...stakeholderInfo, 
+          conversationHistory: newConversation,
+          user_id: stakeholderInfo.email || 'anonymous',
+          session_id: sessionId
+        },
+        'riley'
+      );
+
+      let interactive = aiResult.interactive_question_data;
+      let cleanMessage = aiResult.response;
+      
+      if (aiResult.response.includes('<form>') || aiResult.response.includes('<input type="radio"') || aiResult.response.includes('submit-ratings')) {
+        const parsed = parseHtmlResponse(aiResult.response);
+        if (parsed.hasInteractive) {
+          interactive = parsed.interactive;
+          cleanMessage = parsed.cleanMessage;
+        }
+      }
+
+      setConversationHistory(prev => [
+        ...prev,
+        { 
+          sender: 'ai', 
+          message: cleanMessage,
+          htmlMessage: aiResult.response,
+          timestamp: new Date(),
+          insights: aiResult.insights,
+          interactive: interactive
+        }
+      ]);
+      setSessionId(aiResult.sessionId);
+    } catch (e) {
+      console.error('Rating submission error:', e);
+      setConversationHistory(prev => [
+        ...prev,
+        { 
+          sender: 'ai', 
+          message: "Sorry, there was an error processing your ratings.", 
+          timestamp: new Date()
+        }
+      ]);
+    }
+    setIsLoading(false);
+  };
+
+  // Make it available globally for the iframe
+  useEffect(() => {
+    window.handleRatingSubmission = handleRatingSubmission;
+    return () => {
+      delete window.handleRatingSubmission;
+    };
+  }, [conversationHistory, stakeholderInfo, sessionId]);
 
   const startConversation = async () => {
     if (!stakeholderInfo.name || !stakeholderInfo.role || !stakeholderInfo.department) {
