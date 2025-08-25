@@ -111,28 +111,28 @@ def rating_scale_tool():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Current Operational Challenges Assessment</title>
+        <title>Rating Scale Assessment Tool</title>
         <style>
+            * { box-sizing: border-box; }
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                width: 90%;
                 margin: 0;
                 padding: 15px;
-                background-color: #f8f9fa;
+                background: #f8f9fa;
                 line-height: 1.5;
             }
-            .consultation-container {
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
                 background: white;
                 padding: 25px;
                 border-radius: 8px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                margin-bottom: 20px;
             }
             .question-section {
-                margin-bottom: 25px;
                 padding: 20px;
                 border-left: 4px solid #007bff;
-                background-color: #f8f9fa;
+                background: #f8f9fa;
                 border-radius: 0 6px 6px 0;
             }
             .question-title {
@@ -144,7 +144,7 @@ def rating_scale_tool():
             .challenge-item {
                 margin-bottom: 20px;
                 padding: 15px;
-                background-color: white;
+                background: white;
                 border-radius: 6px;
                 border: 1px solid #e9ecef;
             }
@@ -152,21 +152,20 @@ def rating_scale_tool():
                 font-weight: 600;
                 color: #495057;
                 margin-bottom: 10px;
-                font-size: 15px;
             }
             .rating-container {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-top: 8px;
+                gap: 5px;
             }
             .rating-option {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                margin: 0 5px;
+                flex: 1;
             }
-            .rating-option input[type="radio"] {
+            .rating-option input {
                 margin-bottom: 5px;
                 accent-color: #007bff;
                 transform: scale(1.2);
@@ -174,7 +173,6 @@ def rating_scale_tool():
             .rating-label {
                 font-size: 12px;
                 color: #6c757d;
-                text-align: center;
                 font-weight: 500;
             }
             .scale-labels {
@@ -189,7 +187,7 @@ def rating_scale_tool():
                 text-align: center;
             }
             .submit-btn {
-                background-color: #007bff;
+                background: #007bff;
                 color: white;
                 border: none;
                 padding: 12px 30px;
@@ -197,392 +195,155 @@ def rating_scale_tool():
                 font-size: 16px;
                 font-weight: 600;
                 cursor: pointer;
-                transition: background-color 0.2s ease;
+                transition: background-color 0.2s;
             }
-            .submit-btn:hover {
-                background-color: #0056b3;
-            }
+            .submit-btn:hover { background: #0056b3; }
             .submit-btn:disabled {
-                background-color: #6c757d;
+                background: #6c757d;
                 cursor: not-allowed;
             }
         </style>
     </head>
     <body>
-        <div class="consultation-container">
+        <div class="container">
             <div class="question-section">
-                <h3 class="question-title">Rate the following challenges in your area (1 = Not a problem, 5 = Major problem):</h3>
-                
-                <div class="challenge-item">
-                    <div class="challenge-label">Staff recruitment/retention</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="staff_1" name="staff_recruitment" value="1">
-                            <label for="staff_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="staff_2" name="staff_recruitment" value="2">
-                            <label for="staff_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="staff_3" name="staff_recruitment" value="3">
-                            <label for="staff_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="staff_4" name="staff_recruitment" value="4">
-                            <label for="staff_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="staff_5" name="staff_recruitment" value="5">
-                            <label for="staff_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Student recruitment/retention</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="student_1" name="student_recruitment" value="1">
-                            <label for="student_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="student_2" name="student_recruitment" value="2">
-                            <label for="student_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="student_3" name="student_recruitment" value="3">
-                            <label for="student_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="student_4" name="student_recruitment" value="4">
-                            <label for="student_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="student_5" name="student_recruitment" value="5">
-                            <label for="student_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Industry placement capacity</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="industry_1" name="industry_placement" value="1">
-                            <label for="industry_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="industry_2" name="industry_placement" value="2">
-                            <label for="industry_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="industry_3" name="industry_placement" value="3">
-                            <label for="industry_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="industry_4" name="industry_placement" value="4">
-                            <label for="industry_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="industry_5" name="industry_placement" value="5">
-                            <label for="industry_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Equipment/technology adequacy</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="equipment_1" name="equipment_technology" value="1">
-                            <label for="equipment_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="equipment_2" name="equipment_technology" value="2">
-                            <label for="equipment_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="equipment_3" name="equipment_technology" value="3">
-                            <label for="equipment_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="equipment_4" name="equipment_technology" value="4">
-                            <label for="equipment_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="equipment_5" name="equipment_technology" value="5">
-                            <label for="equipment_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Facility capacity/condition</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="facility_1" name="facility_capacity" value="1">
-                            <label for="facility_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="facility_2" name="facility_capacity" value="2">
-                            <label for="facility_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="facility_3" name="facility_capacity" value="3">
-                            <label for="facility_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="facility_4" name="facility_capacity" value="4">
-                            <label for="facility_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="facility_5" name="facility_capacity" value="5">
-                            <label for="facility_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Curriculum relevance</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="curriculum_1" name="curriculum_relevance" value="1">
-                            <label for="curriculum_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="curriculum_2" name="curriculum_relevance" value="2">
-                            <label for="curriculum_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="curriculum_3" name="curriculum_relevance" value="3">
-                            <label for="curriculum_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="curriculum_4" name="curriculum_relevance" value="4">
-                            <label for="curriculum_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="curriculum_5" name="curriculum_relevance" value="5">
-                            <label for="curriculum_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Regulatory compliance</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="regulatory_1" name="regulatory_compliance" value="1">
-                            <label for="regulatory_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="regulatory_2" name="regulatory_compliance" value="2">
-                            <label for="regulatory_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="regulatory_3" name="regulatory_compliance" value="3">
-                            <label for="regulatory_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="regulatory_4" name="regulatory_compliance" value="4">
-                            <label for="regulatory_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="regulatory_5" name="regulatory_compliance" value="5">
-                            <label for="regulatory_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Funding/budget constraints</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="funding_1" name="funding_budget" value="1">
-                            <label for="funding_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="funding_2" name="funding_budget" value="2">
-                            <label for="funding_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="funding_3" name="funding_budget" value="3">
-                            <label for="funding_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="funding_4" name="funding_budget" value="4">
-                            <label for="funding_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="funding_5" name="funding_budget" value="5">
-                            <label for="funding_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Industry partnerships</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="partnerships_1" name="industry_partnerships" value="1">
-                            <label for="partnerships_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="partnerships_2" name="industry_partnerships" value="2">
-                            <label for="partnerships_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="partnerships_3" name="industry_partnerships" value="3">
-                            <label for="partnerships_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="partnerships_4" name="industry_partnerships" value="4">
-                            <label for="partnerships_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="partnerships_5" name="industry_partnerships" value="5">
-                            <label for="partnerships_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
-                <div class="challenge-item">
-                    <div class="challenge-label">Student support services</div>
-                    <div class="rating-container">
-                        <div class="rating-option">
-                            <input type="radio" id="support_1" name="student_support" value="1">
-                            <label for="support_1" class="rating-label">1</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="support_2" name="student_support" value="2">
-                            <label for="support_2" class="rating-label">2</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="support_3" name="student_support" value="3">
-                            <label for="support_3" class="rating-label">3</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="support_4" name="student_support" value="4">
-                            <label for="support_4" class="rating-label">4</label>
-                        </div>
-                        <div class="rating-option">
-                            <input type="radio" id="support_5" name="student_support" value="5">
-                            <label for="support_5" class="rating-label">5</label>
-                        </div>
-                    </div>
-                    <div class="scale-labels">
-                        <span>Not a problem</span>
-                        <span>Major problem</span>
-                    </div>
-                </div>
-
+                <h3 class="question-title" id="question-title">Rate the following challenges in your area (1 = Not a problem, 5 = Major problem):</h3>
+                <div id="challenges-container"></div>
                 <div class="submit-container">
-                    <button type="button" class="submit-btn" id="submit-ratings">Submit Ratings</button>
+                    <button type="button" class="submit-btn" id="submit-ratings" disabled>Submit Ratings</button>
                 </div>
             </div>
         </div>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const submitBtn = document.getElementById('submit-ratings');
-                const radioGroups = [
-                    'staff_recruitment', 'student_recruitment', 'industry_placement', 
-                    'equipment_technology', 'facility_capacity', 'curriculum_relevance',
-                    'regulatory_compliance', 'funding_budget', 'industry_partnerships', 'student_support'
-                ];
+            // Configuration object - easily customizable
+            const config = {
+                title: "Rate the following challenges in your area (1 = Not a problem, 5 = Major problem):",
+                scaleLabels: ["Not a problem", "Major problem"],
+                scaleSize: 5,
+                challenges: [
+                    { id: 'staff_recruitment', label: 'Staff recruitment/retention' },
+                    { id: 'student_recruitment', label: 'Student recruitment/retention' },
+                    { id: 'industry_placement', label: 'Industry placement capacity' },
+                    { id: 'equipment_technology', label: 'Equipment/technology adequacy' },
+                    { id: 'facility_capacity', label: 'Facility capacity/condition' },
+                    { id: 'curriculum_relevance', label: 'Curriculum relevance' },
+                    { id: 'regulatory_compliance', label: 'Regulatory compliance' },
+                    { id: 'funding_budget', label: 'Funding/budget constraints' },
+                    { id: 'industry_partnerships', label: 'Industry partnerships' },
+                    { id: 'student_support', label: 'Student support services' }
+                ]
+            };
 
-                function checkAllSelected() {
-                    const allSelected = radioGroups.every(group => 
-                        document.querySelector(`input[name="${group}"]:checked`)
-                    );
-                    submitBtn.disabled = !allSelected;
+            class RatingScaleTool {
+                constructor(config) {
+                    this.config = config;
+                    this.ratings = {};
+                    this.init();
                 }
 
-                // Add event listeners to all radio buttons
-                radioGroups.forEach(group => {
-                    const radios = document.querySelectorAll(`input[name="${group}"]`);
-                    radios.forEach(radio => {
-                        radio.addEventListener('change', checkAllSelected);
+                init() {
+                    this.renderTitle();
+                    this.renderChallenges();
+                    this.attachEventListeners();
+                }
+
+                renderTitle() {
+                    document.getElementById('question-title').textContent = this.config.title;
+                }
+
+                renderChallenges() {
+                    const container = document.getElementById('challenges-container');
+                    container.innerHTML = this.config.challenges.map(challenge => 
+                        this.createChallengeHTML(challenge)
+                    ).join('');
+                }
+
+                createChallengeHTML(challenge) {
+                    const ratingOptions = Array.from({length: this.config.scaleSize}, (_, i) => {
+                        const value = i + 1;
+                        return `
+                            <div class="rating-option">
+                                <input type="radio" id="${challenge.id}_${value}" name="${challenge.id}" value="${value}">
+                                <label for="${challenge.id}_${value}" class="rating-label">${value}</label>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="challenge-item">
+                            <div class="challenge-label">${challenge.label}</div>
+                            <div class="rating-container">${ratingOptions}</div>
+                            <div class="scale-labels">
+                                <span>${this.config.scaleLabels[0]}</span>
+                                <span>${this.config.scaleLabels[1]}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                attachEventListeners() {
+                    const submitBtn = document.getElementById('submit-ratings');
+                    
+                    // Add change listeners to all radio buttons
+                    this.config.challenges.forEach(challenge => {
+                        const radios = document.querySelectorAll(`input[name="${challenge.id}"]`);
+                        radios.forEach(radio => {
+                            radio.addEventListener('change', () => this.handleRatingChange());
+                        });
                     });
-                });
 
-                // Initial check
-                checkAllSelected();
+                    submitBtn.addEventListener('click', () => this.handleSubmit());
+                    this.checkAllSelected(); // Initial check
+                }
 
-                submitBtn.addEventListener('click', function() {
+                handleRatingChange() {
+                    this.checkAllSelected();
+                }
+
+                checkAllSelected() {
+                    const allSelected = this.config.challenges.every(challenge => 
+                        document.querySelector(`input[name="${challenge.id}"]:checked`)
+                    );
+                    document.getElementById('submit-ratings').disabled = !allSelected;
+                }
+
+                handleSubmit() {
                     const ratings = {};
-                    radioGroups.forEach(group => {
-                        const selected = document.querySelector(`input[name="${group}"]:checked`);
+                    const challengeMap = {};
+                    
+                    this.config.challenges.forEach(challenge => {
+                        challengeMap[challenge.id] = challenge.label;
+                        const selected = document.querySelector(`input[name="${challenge.id}"]:checked`);
                         if (selected) {
-                            ratings[group] = selected.value;
+                            ratings[challenge.id] = selected.value;
                         }
                     });
 
-                    // Create a formatted response message
-                    const challengeLabels = {
-                        'staff_recruitment': 'Staff recruitment/retention',
-                        'student_recruitment': 'Student recruitment/retention', 
-                        'industry_placement': 'Industry placement capacity',
-                        'equipment_technology': 'Equipment/technology adequacy',
-                        'facility_capacity': 'Facility capacity/condition',
-                        'curriculum_relevance': 'Curriculum relevance',
-                        'regulatory_compliance': 'Regulatory compliance',
-                        'funding_budget': 'Funding/budget constraints',
-                        'industry_partnerships': 'Industry partnerships',
-                        'student_support': 'Student support services'
-                    };
-
-                    let responseMessage = "Here are my ratings for the operational challenges:\\n\\n";
+                    let responseMessage = "Here are my ratings for the operational challenges:\n\n";
                     Object.entries(ratings).forEach(([key, value]) => {
-                        responseMessage += `${challengeLabels[key]}: ${value}/5\\n`;
+                        responseMessage += `${challengeMap[key]}: ${value}/${this.config.scaleSize}\n`;
                     });
 
-                    // Trigger the response mechanism
+                    // Handle response
                     if (window.parent && window.parent.handleRatingSubmission) {
                         window.parent.handleRatingSubmission(responseMessage);
                     } else {
-                        // Fallback for direct integration
-                        alert('Ratings submitted: ' + responseMessage);
+                        alert('Ratings submitted:\n' + responseMessage);
+                        console.log('Ratings:', ratings);
                     }
-                });
+                }
+            }
+
+            // Initialize the tool when DOM is ready
+            document.addEventListener('DOMContentLoaded', () => {
+                new RatingScaleTool(config);
             });
+
+            // Export for reuse
+            if (typeof module !== 'undefined' && module.exports) {
+                module.exports = { RatingScaleTool, config };
+            }
         </script>
     </body>
     </html>
@@ -756,18 +517,24 @@ def rating_scale_v2_tool():
         document.addEventListener("change", checkAllSelected);
 
         submitBtn.addEventListener("click", () => {
-        const ratings = {};
-        challenges.forEach(c => {
-            const selected = document.querySelector(`input[name="${c.key}"]:checked`);
-            ratings[c.label] = selected ? selected.value : "Not selected";
-        });
+            const ratings = {};
+            challenges.forEach(c => {
+                const selected = document.querySelector(`input[name="${c.key}"]:checked`);
+                ratings[c.label] = selected ? selected.value : "Not selected";
+            });
 
-        let responseMessage = "Here are my ratings:\n\n";
-        Object.entries(ratings).forEach(([label, value]) => {
-            responseMessage += `${label}: ${value}/5\n`;
-        });
+            let responseMessage = "Here are my ratings:\\n\\n";
+            Object.entries(ratings).forEach(([label, value]) => {
+                responseMessage += `${label}: ${value}/5\\n`;
+            });
 
-        alert(responseMessage);
+            // Trigger the response mechanism (same as original)
+            if (window.parent && window.parent.handleRatingSubmission) {
+                window.parent.handleRatingSubmission(responseMessage);
+            } else {
+                // Fallback for direct integration
+                alert('Ratings submitted: ' + responseMessage);
+            }
         });
 
         // Initial state
