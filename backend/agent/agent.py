@@ -328,8 +328,10 @@ def rating_scale_tool():
                     // Handle response
                     if (window.parent && window.parent.handleRatingSubmission) {
                         window.parent.handleRatingSubmission(responseMessage);
+                        // Prevent double submission
+                        document.getElementById('submit-ratings').disabled = true;
                     } else {
-                        alert('Ratings submitted:\n' + responseMessage);
+                        alert('Ratings submitted:\\n' + responseMessage);
                         console.log('Ratings:', ratings);
                     }
                 }
@@ -533,7 +535,7 @@ def rating_scale_v2_tool():
                 window.parent.handleRatingSubmission(responseMessage);
             } else {
                 // Fallback for direct integration
-                alert('Ratings submitted: ' + responseMessage);
+                        alert('Ratings submitted: ' + responseMessage);
             }
         });
 
@@ -549,6 +551,113 @@ def rating_scale_v2_tool():
         "type": "html"
     }
 
+def checklist__tool():
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opportunities for Growth</title>
+    <style>
+        body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8f9fa;
+        padding: 20px;
+        }
+        .checklist-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        max-width: 600px;
+        }
+        .checklist-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #212529;
+        }
+        .checklist-item {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        }
+        .checklist-item input[type="checkbox"] {
+        margin-right: 10px;
+        transform: scale(1.2);
+        accent-color: #007bff;
+        }
+        .checklist-item label {
+        font-size: 15px;
+        color: #495057;
+        cursor: pointer;
+        }
+        .other-input {
+        margin-left: 25px;
+        padding: 6px 10px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 14px;
+        flex: 1;
+        }
+    </style>
+    </head>
+    <body>
+    <div class="checklist-container">
+        <div class="checklist-title">Where do you see the biggest opportunities for growth in your area?</div>
+        
+        <div class="checklist-item">
+        <input type="checkbox" id="student_numbers">
+        <label for="student_numbers">Increasing student numbers in existing programs</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="new_programs">
+        <label for="new_programs">Developing new programs/qualifications</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="online_delivery">
+        <label for="online_delivery">Expanding online/flexible delivery</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="industry_partnerships">
+        <label for="industry_partnerships">Strengthening industry partnerships</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="student_outcomes">
+        <label for="student_outcomes">Improving student outcomes/completion rates</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="employment_rates">
+        <label for="employment_rates">Enhancing graduate employment rates</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="revenue_streams">
+        <label for="revenue_streams">Developing new revenue streams</label>
+        </div>
+        <div class="checklist-item">
+        <input type="checkbox" id="other_option">
+        <label for="other_option">Other:</label>
+        <input type="text" class="other-input" id="other_text" placeholder="Please specify" disabled>
+        </div>
+    </div>
+
+    <script>
+        const otherCheckbox = document.getElementById('other_option');
+        const otherText = document.getElementById('other_text');
+
+        otherCheckbox.addEventListener('change', () => {
+        otherText.disabled = !otherCheckbox.checked;
+        if (!otherCheckbox.checked) otherText.value = "";
+        });
+    </script>
+    </body>
+    </html>
+    """
+    return {
+        "message": html,
+        "type": "html"
+    }
 
 root_agent = Agent(
     name="riley_strategic_consultant",
@@ -606,6 +715,17 @@ root_agent = Agent(
     3.2 Priority Areas for Investment
     ONLY after completing the SECTION 3.1, call the rating_scale_v2_tool. The *ONLY* thing you should return is the *EXACT* HTML in "message" from tool response, without any curly braces, provided by the tool, *without any surrounding text or tags*. Do *NOT* include any introductory phrases or explanations. Just the HTML.
 
+    3.3 Growth Opportunities
+    ONLY after completing the SECTION 3.2, call the checklist__tool. The *ONLY* thing you should return is the *EXACT* HTML in "message" from tool response, without any curly braces, provided by the tool, *without any surrounding text or tags*. Do *NOT* include any introductory phrases or explanations. Just the HTML.
+    After that ask that: Please elaborate on your top growth opportunity.
+
+    Section 4: Capacity and Constraints
+    4.1 Current Capacity Utilisation (to the best of your knowledge)
+    - Current student capacity in your area: __________ students
+    - Maximum potential capacity students: __________ students
+    - Current utilisation rate: __________%
+
+
     CONVERSATION FLOW:
     1. Start with personalized greeting using their actual name
     2. Ask ONE role context question per response (5 questions total)
@@ -637,5 +757,5 @@ root_agent = Agent(
     Your goal is to systematically gather stakeholder context before proceeding to strategic consultation and priority discovery.
     """,
     model=LiteLlm("gemini/gemini-2.5-flash"),
-    tools=[FunctionTool(single_choice_selection__tool), FunctionTool(rating_scale_tool), FunctionTool(rating_scale_v2_tool)]
+    tools=[FunctionTool(single_choice_selection__tool), FunctionTool(rating_scale_tool), FunctionTool(rating_scale_v2_tool), FunctionTool(checklist__tool)]
 )
