@@ -8,14 +8,13 @@ import sys
 import logging
 import asyncio
 from dotenv import load_dotenv
-import os # Import os module
 
-# Add the parent directory (backend) to the Python path to allow importing common
+# Add the parent directory (backend) to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Use relative imports within the agent package
-from .task_manager import TaskManager
-from .agent import root_agent
+# Import TaskManagers and agents
+from .task_manager import TaskManager, TaskManager_CapacityAgent, TaskManager_RiskAgent, TaskManager_EngagementAgent
+from .agent import root_agent, capacity_agent, risk_agent, engagement_agent
 from common.a2a_server import create_agent_server
 
 # Configure logging
@@ -30,47 +29,51 @@ logger = logging.getLogger(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path=dotenv_path, override=True)
 
-# Global variable for the TaskManager instance
+# Global variables for TaskManager instances
 task_manager_instance: TaskManager = None
+capacity_task_manager_instance: TaskManager_CapacityAgent = None
+risk_task_manager_instance: TaskManager_RiskAgent = None
+engagement_task_manager_instance: TaskManager_EngagementAgent = None
 
 async def main():
     """Initialize and start the Strategic Consultant Agent server."""
-    global task_manager_instance
-    
-    logger.info("Starting Strategic Consultant Agent A2A Server initialization...")
-    
-    # Initialize TaskManager
-    task_manager_instance = TaskManager(agent=root_agent)
-    logger.info("TaskManager initialized with agent instance.")
+    global task_manager_instance, capacity_task_manager_instance, risk_task_manager_instance, engagement_task_manager_instance
 
-    # Configuration for the A2A server
-    # For Railway deployment: use 0.0.0.0 and PORT environment variable
+    logger.info("Starting Strategic Consultant Agent A2A Server initialization...")
+
+    # Initialize TaskManagers
+    task_manager_instance = TaskManager(agent=root_agent)
+    capacity_task_manager_instance = TaskManager_CapacityAgent(agent=capacity_agent)
+    risk_task_manager_instance = TaskManager_RiskAgent(agent=risk_agent)
+    engagement_task_manager_instance = TaskManager_EngagementAgent(agent=engagement_agent)
+
+    logger.info("TaskManagers initialized (Consultant + Capacity + Risk + Engagement).")
+
+    # Host/port config
     host = os.getenv("CONSULTANT_A2A_HOST", "0.0.0.0")
     port = int(os.getenv("PORT", os.getenv("CONSULTANT_A2A_PORT", "8004")))
-    
-    # Create the FastAPI app using the helper
+
+    # Create the FastAPI app
     app = create_agent_server(
         name=root_agent.name,
         description=root_agent.description,
-        task_manager=task_manager_instance
+        task_manager=task_manager_instance,
+        capacity_task_manager=capacity_task_manager_instance,
+        risk_task_manager=risk_task_manager_instance,
+        engagement_task_manager=engagement_task_manager_instance
     )
 
     logger.info(f"Strategic Consultant Agent A2A server starting on {host}:{port}")
     
-    # Configure uvicorn
     import uvicorn
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
-    
-    # Run the server
     await server.serve()
     
-    # This part will be reached after the server is stopped (e.g., Ctrl+C)
     logger.info("Strategic Consultant Agent A2A server stopped.")
 
 if __name__ == "__main__":
     try:
-        # Run the async main function
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Strategic Consultant Agent server stopped by user.")

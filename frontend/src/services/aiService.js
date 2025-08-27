@@ -106,7 +106,7 @@ export class AIService {
 
   async sendCapacityAssessmentMessage(userMessage, context) {
     try {
-      const response = await fetch(`${BACKEND_URL}/capacity-agent`, {
+      const response = await fetch(`${BACKEND_URL}/capacity_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export class AIService {
 
   async sendRiskAssessmentMessage(userMessage, context) {
     try {
-      const response = await fetch(`${BACKEND_URL}/risk-agent`, {
+      const response = await fetch(`${BACKEND_URL}/risk_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ export class AIService {
 
   async sendEngagementPlanningMessage(userMessage, context) {
     try {
-      const response = await fetch(`${BACKEND_URL}/engagement-agent`, {
+      const response = await fetch(`${BACKEND_URL}/engagement_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

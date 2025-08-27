@@ -31,7 +31,10 @@ def create_agent_server(
     description: str, 
     task_manager: Any, 
     endpoints: Optional[Dict[str, Callable]] = None,
-    well_known_path: Optional[str] = None
+    well_known_path: Optional[str] = None,
+    capacity_task_manager: Optional[Any] = None,
+    risk_task_manager: Optional[Any] = None,
+    engagement_task_manager: Optional[Any] = None
 ) -> FastAPI:
     """
     Create a FastAPI server for an agent following A2A protocol.
@@ -81,10 +84,9 @@ def create_agent_server(
         with open(agent_json_path, "w") as f:
             json.dump(agent_metadata, f, indent=2)
     
-    # Standard A2A run endpoint
+    # Standard A2A run endpoint: Riley
     @app.post("/run", response_model=AgentResponse)
     async def run(request: AgentRequest = Body(...)):
-        """Standard A2A run endpoint for processing agent requests."""
         try:
             result = await task_manager.process_task(request.message, request.context, request.session_id)
             return AgentResponse(
@@ -101,6 +103,68 @@ def create_agent_server(
                 session_id=request.session_id
             )
     
+    # CAPACITY_AGENT:
+    @app.post("/capacity_agent", response_model=AgentResponse)
+    async def capacity_agent(request: AgentRequest = Body(...)):
+        try:
+            if not capacity_task_manager:
+                raise ValueError("CapacityAgent TaskManager not configured")
+            result = await capacity_task_manager.process_task(request.message, request.context, request.session_id)
+            return AgentResponse(
+                message=result.get("message", "Task completed"),
+                status=result.get("status", "success"),
+                data=result.get("data", {}),
+                session_id=result.get("session_id", request.session_id)
+            )
+        except Exception as e:
+            return AgentResponse(
+                message=f"Error processing request: {str(e)}",
+                status="error",
+                data={"error_type": type(e).__name__},
+                session_id=request.session_id
+            )
+        
+    @app.post("/risk_agent", response_model=AgentResponse)
+    async def risk_agent(request: AgentRequest = Body(...)):
+        try:
+            if not risk_task_manager:
+                raise ValueError("RiskAgent TaskManager not configured")
+            result = await risk_task_manager.process_task(request.message, request.context, request.session_id)
+            return AgentResponse(
+                message=result.get("message", "Task completed"),
+                status=result.get("status", "success"),
+                data=result.get("data", {}),
+                session_id=result.get("session_id", request.session_id)
+            )
+        except Exception as e:
+            return AgentResponse(
+                message=f"Error processing request: {str(e)}",
+                status="error",
+                data={"error_type": type(e).__name__},
+                session_id=request.session_id
+            )
+        
+    @app.post("/engagement_agent", response_model=AgentResponse)
+    async def engagement_agent(request: AgentRequest = Body(...)):
+        try:
+            if not engagement_task_manager:
+                raise ValueError("EngagementAgent TaskManager not configured")
+            result = await engagement_task_manager.process_task(request.message, request.context, request.session_id)
+            return AgentResponse(
+                message=result.get("message", "Task completed"),
+                status=result.get("status", "success"),
+                data=result.get("data", {}),
+                session_id=result.get("session_id", request.session_id)
+            )
+        except Exception as e:
+            return AgentResponse(
+                message=f"Error processing request: {str(e)}",
+                status="error",
+                data={"error_type": type(e).__name__},
+                session_id=request.session_id
+            )
+
+
     # Health check endpoint
     @app.get("/health")
     async def health_check():

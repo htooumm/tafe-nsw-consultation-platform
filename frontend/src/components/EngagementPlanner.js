@@ -28,6 +28,69 @@ const EngagementPlanner = ({ onBack }) => {
   const aiService = new AIService();
   const dataService = new DataService();
 
+  // Message formatting component
+  const FormattedMessage = ({ message }) => {
+    const formatMessage = (text) => {
+      // Split by double newlines for paragraphs
+      const paragraphs = text.split('\n\n');
+      
+      return paragraphs.map((paragraph, pIndex) => {
+        if (!paragraph.trim()) return null;
+        
+        // Handle lists (lines starting with * or -)
+        if (paragraph.includes('\n*') || paragraph.includes('\n-')) {
+          const lines = paragraph.split('\n');
+          const beforeList = [];
+          const listItems = [];
+          let inList = false;
+          
+          lines.forEach(line => {
+            if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+              inList = true;
+              listItems.push(line.replace(/^[\s*-]+/, '').trim());
+            } else if (!inList) {
+              beforeList.push(line);
+            }
+          });
+          
+          return (
+            <div key={pIndex} className="mb-4">
+              {beforeList.length > 0 && (
+                <p className="mb-2">{formatInlineText(beforeList.join(' '))}</p>
+              )}
+              {listItems.length > 0 && (
+                <ul className="list-disc ml-4 space-y-1">
+                  {listItems.map((item, idx) => (
+                    <li key={idx} className="text-sm">{formatInlineText(item)}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        }
+        
+        // Regular paragraph
+        return (
+          <p key={pIndex} className="mb-3 leading-relaxed">
+            {formatInlineText(paragraph)}
+          </p>
+        );
+      }).filter(Boolean);
+    };
+    
+    const formatInlineText = (text) => {
+      // Handle **bold** text
+      return text.split(/(\*\*.*?\*\*)/).map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
+    };
+    
+    return <div>{formatMessage(message)}</div>;
+  };
+
   // Auto-scroll to bottom when conversation updates
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -46,87 +109,122 @@ const EngagementPlanner = ({ onBack }) => {
     }
 
     setCurrentStep('conversation');
-    const welcomeMessage = {
-      sender: 'ai',
-      message: `G'day ${stakeholderInfo.name}! I'm Jordan, your stakeholder engagement specialist. I'm here to help you develop a comprehensive engagement strategy for ${stakeholderInfo.department}.
-
-Let's start by understanding what you're trying to achieve. Are you looking to engage stakeholders for a specific project, policy change, or ongoing relationship building?`,
-      timestamp: new Date()
-    };
-    setConversationHistory([welcomeMessage]);
-  };
-
-  const handleUserResponse = async () => {
-    if (!userResponse.trim() || isLoading) return;
-
-    const userMessage = userResponse;
-    setUserResponse('');
     setIsLoading(true);
 
-    // Add user message to conversation
-    setConversationHistory(prev => [...prev, {
-      sender: 'user',
-      message: userMessage,
-      timestamp: new Date()
-    }]);
+    // Create initial context for the engagement agent
+    const context = {
+      user_id: stakeholderInfo.email || stakeholderInfo.name.toLowerCase().replace(/\s+/g, '_'),
+      department: stakeholderInfo.department,
+      role: stakeholderInfo.role,
+      name: stakeholderInfo.name,
+      conversationHistory: []
+    };
 
     try {
-      let aiResult;
-      if (sessionId) {
-        // Use Jordan engagement agent if session exists
-        const response = await aiService.sendEngagementPlanningMessage({
-          userMessage,
-          sessionId,
-          context: {
-            conversationHistory: conversationHistory,
-            engagementPlan: engagementPlan,
-            stakeholderInfo: stakeholderInfo
-          }
-        });
-        
-        aiResult = {
-          response: response.message,
-          insights: response.insights || []
-        };
-      } else {
-        // Fallback to original service
-        aiResult = await aiService.generateResponse(
-          userMessage,
-          stakeholderInfo,
-          'jordan'
-        );
-      }
+      // Send initial message to engagement agent
+      const aiResult = await aiService.generateResponse(
+        `Hello, I'm ${stakeholderInfo.name}, ${stakeholderInfo.role} from ${stakeholderInfo.department}. I'd like to start stakeholder engagement planning.`,
+        context,
+        'jordan'
+      );
 
-      const updatedConversation = [
-        ...conversationHistory,
-        { sender: 'user', message: userMessage, timestamp: new Date() },
-        {
-          sender: 'ai',
-          message: aiResult.response,
-          timestamp: new Date(),
-          insights: aiResult.insights
-        }
-      ];
-      setConversationHistory(updatedConversation);
+      setSessionId(aiResult.sessionId);
 
-      // Extract engagement plan elements
-      extractEngagementElements(userMessage, aiResult.response);
+      const welcomeMessage = {
+        sender: 'ai',
+        message: aiResult.response,
+        timestamp: new Date()
+      };
+      setConversationHistory([welcomeMessage]);
 
     } catch (error) {
-      console.error('Error getting AI response:', error);
-      setConversationHistory(prev => [...prev, {
+      console.error('Error starting conversation:', error);
+      const fallbackMessage = {
         sender: 'ai',
-        message: 'I apologize, but I encountered an error. Please try again.',
+        message: `G'day ${stakeholderInfo.name}! I'm Jordan, your stakeholder engagement specialist. I'm here to help you develop a comprehensive engagement strategy for ${stakeholderInfo.department}. Let's start by understanding what you're trying to achieve. Are you looking to engage stakeholders for a specific project, policy change, or ongoing relationship building?`,
         timestamp: new Date()
-      }]);
+      };
+      setConversationHistory([fallbackMessage]);
     }
 
     setIsLoading(false);
   };
 
-  const extractEngagementElements = (userMessage, aiResponse) => {
+  const handleUserResponse = async () => {
+    if (!userResponse.trim() || isLoading) return;
+
+    setIsLoading(true);
+    
+    const newConversation = [
+      ...conversationHistory,
+      { sender: 'user', message: userResponse, timestamp: new Date() }
+    ];
+    setConversationHistory(newConversation);
+
+    try {
+      // Create context with conversation history for engagement agent
+      const context = {
+        user_id: stakeholderInfo.email || stakeholderInfo.name.toLowerCase().replace(/\s+/g, '_'),
+        department: stakeholderInfo.department,
+        role: stakeholderInfo.role,
+        name: stakeholderInfo.name,
+        conversationHistory: newConversation.map(msg => ({
+          sender: msg.sender,
+          message: msg.message
+        }))
+      };
+
+      const aiResult = await aiService.generateResponse(
+        userResponse,
+        context,
+        'jordan'
+      );
+
+      // Update session ID if provided
+      if (aiResult.sessionId) {
+        setSessionId(aiResult.sessionId);
+      }
+
+      const updatedConversation = [
+        ...newConversation,
+        {
+          sender: 'ai',
+          message: aiResult.response,
+          timestamp: new Date(),
+          insights: aiResult.insights,
+          data: aiResult.data
+        }
+      ];
+      setConversationHistory(updatedConversation);
+
+      // Extract engagement plan elements from conversation
+      extractEngagementElements(userResponse, aiResult.response, aiResult.data);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorConversation = [
+        ...newConversation,
+        {
+          sender: 'ai',
+          message: "I apologize, but I'm having trouble processing your response right now. Could you please try again?",
+          timestamp: new Date()
+        }
+      ];
+      setConversationHistory(errorConversation);
+    }
+
+    setUserResponse('');
+    setIsLoading(false);
+  };
+
+  const extractEngagementElements = (userMessage, aiResponse, agentData = null) => {
     const combined = userMessage + ' ' + aiResponse;
     const plan = { ...engagementPlan };
+
+    // Use agent data if available from the backend
+    if (agentData && agentData.conversation_stage) {
+      console.log('Engagement planning stage:', agentData.conversation_stage);
+    }
 
     // Extract stakeholder groups
     if (combined.toLowerCase().includes('student') || combined.toLowerCase().includes('learner')) {
@@ -142,7 +240,7 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
       }
     }
 
-    if (combined.toLowerCase().includes('staff') || combined.toLowerCase().includes('teacher')) {
+    if (combined.toLowerCase().includes('staff') || combined.toLowerCase().includes('teacher') || combined.toLowerCase().includes('faculty')) {
       const existing = plan.stakeholders.find(s => s.group === 'Academic Staff');
       if (!existing) {
         plan.stakeholders.push({
@@ -155,7 +253,7 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
       }
     }
 
-    if (combined.toLowerCase().includes('industry') || combined.toLowerCase().includes('employer')) {
+    if (combined.toLowerCase().includes('industry') || combined.toLowerCase().includes('employer') || combined.toLowerCase().includes('partner')) {
       const existing = plan.stakeholders.find(s => s.group === 'Industry Partners');
       if (!existing) {
         plan.stakeholders.push({
@@ -164,6 +262,32 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
           interest: 'high',
           approach: 'Partnership meetings and industry forums',
           priority: 'secondary'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('parent') || combined.toLowerCase().includes('family')) {
+      const existing = plan.stakeholders.find(s => s.group === 'Parents/Families');
+      if (!existing) {
+        plan.stakeholders.push({
+          group: 'Parents/Families',
+          influence: 'medium',
+          interest: 'high',
+          approach: 'Information sessions and regular updates',
+          priority: 'secondary'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('government') || combined.toLowerCase().includes('policy') || combined.toLowerCase().includes('regulator')) {
+      const existing = plan.stakeholders.find(s => s.group === 'Government/Regulators');
+      if (!existing) {
+        plan.stakeholders.push({
+          group: 'Government/Regulators',
+          influence: 'high',
+          interest: 'medium',
+          approach: 'Formal reporting and compliance meetings',
+          priority: 'primary'
         });
       }
     }
@@ -182,15 +306,41 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
       }
     }
 
-    if (combined.toLowerCase().includes('workshop') || combined.toLowerCase().includes('meeting')) {
-      const existing = plan.strategies.find(s => s.method === 'Workshops & Meetings');
+    if (combined.toLowerCase().includes('workshop') || combined.toLowerCase().includes('meeting') || combined.toLowerCase().includes('forum')) {
+      const existing = plan.strategies.find(s => s.method === 'Workshops & Forums');
       if (!existing) {
         plan.strategies.push({
-          method: 'Workshops & Meetings',
-          description: 'Face-to-face consultation sessions',
+          method: 'Workshops & Forums',
+          description: 'Face-to-face consultation sessions and forums',
           audience: 'Key stakeholders',
           frequency: 'Monthly',
           resources: 'Meeting facilities, facilitation support'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('focus group') || combined.toLowerCase().includes('consultation')) {
+      const existing = plan.strategies.find(s => s.method === 'Focus Groups');
+      if (!existing) {
+        plan.strategies.push({
+          method: 'Focus Groups',
+          description: 'Small group discussions for detailed feedback',
+          audience: 'Selected representatives',
+          frequency: 'As needed',
+          resources: 'Facilitator, recording equipment'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('social media') || combined.toLowerCase().includes('online')) {
+      const existing = plan.strategies.find(s => s.method === 'Digital Engagement');
+      if (!existing) {
+        plan.strategies.push({
+          method: 'Digital Engagement',
+          description: 'Social media and online platform engagement',
+          audience: 'Broad community',
+          frequency: 'Ongoing',
+          resources: 'Social media management, content creation'
         });
       }
     }
@@ -204,6 +354,30 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
           purpose: 'Regular updates and announcements',
           frequency: 'Bi-weekly',
           audience: 'All stakeholders'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('website') || combined.toLowerCase().includes('portal')) {
+      const existing = plan.communications.find(c => c.channel === 'Web Portal');
+      if (!existing) {
+        plan.communications.push({
+          channel: 'Web Portal',
+          purpose: 'Information hub and resource center',
+          frequency: 'Ongoing updates',
+          audience: 'All stakeholders'
+        });
+      }
+    }
+
+    if (combined.toLowerCase().includes('report') || combined.toLowerCase().includes('document')) {
+      const existing = plan.communications.find(c => c.channel === 'Progress Reports');
+      if (!existing) {
+        plan.communications.push({
+          channel: 'Progress Reports',
+          purpose: 'Formal progress and outcome reporting',
+          frequency: 'Quarterly',
+          audience: 'Key stakeholders'
         });
       }
     }
@@ -233,10 +407,10 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
     const exportData = {
       stakeholder: stakeholderInfo,
       consultation_type: 'engagement_planning',
+      agent: 'jordan_stakeholder_specialist',
+      session_id: sessionId,
       conversation: conversationHistory,
       engagement_plan: engagementPlan,
-      session_id: sessionId, // Include session tracking
-      agent_type: 'jordan_engagement_planner',
       export_date: new Date().toISOString()
     };
 
@@ -362,18 +536,27 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
               </h2>
             </div>
             
-            <div className="h-96 overflow-y-auto p-4 space-y-4" ref={messagesContainerRef}>
+            <div 
+              className="h-96 overflow-y-auto p-4 space-y-4" 
+              ref={messagesContainerRef}
+            >
               {conversationHistory.map((msg, index) => (
                 <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                     msg.sender === 'user' 
-                      ? 'bg-purple-600 text-white' 
+                      ? 'bg-green-600 text-white' 
                       : 'bg-gray-100 text-gray-900'
                   }`}>
                     {msg.sender === 'ai' && (
-                      <div className="text-xs text-gray-600 mb-1">Jordan</div>
+                      <div className="text-xs text-gray-600 mb-2 font-medium">Morgan</div>
                     )}
-                    <div className="text-sm">{msg.message}</div>
+                    <div className="text-sm">
+                      {msg.sender === 'ai' ? (
+                        <FormattedMessage message={msg.message} />
+                      ) : (
+                        msg.message
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -388,6 +571,8 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
                   </div>
                 </div>
               )}
+              
+              {/* Auto-scroll target */}
               <div ref={messagesEndRef} />
             </div>
             
@@ -427,7 +612,7 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
             <div className="p-4">
               {engagementPlan.stakeholders.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4">
-                  Stakeholder groups will be identified here.
+                  Stakeholder groups will be identified here as we discuss your engagement needs.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -458,7 +643,7 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
             <div className="p-4">
               {engagementPlan.strategies.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4">
-                  Engagement strategies will appear here.
+                  Engagement strategies will appear here as we discuss your approach.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -485,7 +670,7 @@ Let's start by understanding what you're trying to achieve. Are you looking to e
             <div className="p-4">
               {engagementPlan.communications.length === 0 ? (
                 <p className="text-gray-500 text-sm text-center py-4">
-                  Communication channels will be planned here.
+                  Communication channels will be planned here as we discuss your needs.
                 </p>
               ) : (
                 <div className="space-y-3">

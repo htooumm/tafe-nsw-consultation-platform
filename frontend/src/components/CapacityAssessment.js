@@ -29,6 +29,69 @@ const CapacityAssessment = ({ onBack }) => {
   const aiService = new AIService();
   const dataService = new DataService();
 
+  // Message formatting component
+  const FormattedMessage = ({ message }) => {
+    const formatMessage = (text) => {
+      // Split by double newlines for paragraphs
+      const paragraphs = text.split('\n\n');
+      
+      return paragraphs.map((paragraph, pIndex) => {
+        if (!paragraph.trim()) return null;
+        
+        // Handle lists (lines starting with * or -)
+        if (paragraph.includes('\n*') || paragraph.includes('\n-')) {
+          const lines = paragraph.split('\n');
+          const beforeList = [];
+          const listItems = [];
+          let inList = false;
+          
+          lines.forEach(line => {
+            if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+              inList = true;
+              listItems.push(line.replace(/^[\s*-]+/, '').trim());
+            } else if (!inList) {
+              beforeList.push(line);
+            }
+          });
+          
+          return (
+            <div key={pIndex} className="mb-4">
+              {beforeList.length > 0 && (
+                <p className="mb-2">{formatInlineText(beforeList.join(' '))}</p>
+              )}
+              {listItems.length > 0 && (
+                <ul className="list-disc ml-4 space-y-1">
+                  {listItems.map((item, idx) => (
+                    <li key={idx} className="text-sm">{formatInlineText(item)}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        }
+        
+        // Regular paragraph
+        return (
+          <p key={pIndex} className="mb-3 leading-relaxed">
+            {formatInlineText(paragraph)}
+          </p>
+        );
+      }).filter(Boolean);
+    };
+    
+    const formatInlineText = (text) => {
+      // Handle **bold** text
+      return text.split(/(\*\*.*?\*\*)/).map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      });
+    };
+    
+    return <div>{formatMessage(message)}</div>;
+  };
+
   // Auto-scroll to bottom when conversation updates
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -369,9 +432,15 @@ const CapacityAssessment = ({ onBack }) => {
                       : 'bg-gray-100 text-gray-900'
                   }`}>
                     {msg.sender === 'ai' && (
-                      <div className="text-xs text-gray-600 mb-1">Morgan</div>
+                      <div className="text-xs text-gray-600 mb-2 font-medium">Morgan</div>
                     )}
-                    <div className="text-sm">{msg.message}</div>
+                    <div className="text-sm">
+                      {msg.sender === 'ai' ? (
+                        <FormattedMessage message={msg.message} />
+                      ) : (
+                        msg.message
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

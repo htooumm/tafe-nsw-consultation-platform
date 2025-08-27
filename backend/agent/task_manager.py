@@ -800,6 +800,8 @@ class TaskManager:
             department = context.get("department", "Unknown Department")
             conversation_history = context.get("conversationHistory", [])
 
+            logger.info(f"User ID: {user_id}, Department: {department}, Conversation History: {conversation_history}")
+
             # Analyze conversation stage using enhanced tracker
             stage_analysis = ConsultationStageTracker.analyze_conversation_stage(message, conversation_history)
             
@@ -1099,3 +1101,233 @@ RILEY MUST:
             }
         
         return None
+
+
+
+
+class TaskManager_CapacityAgent:
+    """Minimal Task Manager for running tasks with the Capacity Analyst Agent."""
+
+    def __init__(self, agent):
+        logger.info(f"Initializing TaskManager for agent: CapacityAgentApp")
+        self.agent = agent
+
+        # Initialize services
+        self.session_service = InMemorySessionService()
+        self.artifact_service = InMemoryArtifactService()
+
+        # Runner
+        self.runner = Runner(
+            agent=self.agent,
+            app_name="CapacityAgentApp",
+            session_service=self.session_service,
+            artifact_service=self.artifact_service
+        )
+        logger.info(f"ADK Runner initialized for app '{self.runner.app_name}'")
+
+    async def process_task(self, message: str, context: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            # Create session if not exists
+            # Create or generate session
+            if not session_id:
+                session_id = str(uuid.uuid4())
+
+            conversation_history = context.get("conversationHistory", [])
+
+            logger.info(f"CONVERSATION HISTORY: {conversation_history}")
+
+            # Create session
+            try:
+                await self.session_service.create_session(
+                    app_name="CapacityAgentApp", # Use the correct app_name for CapacityAgent
+                    user_id="default_user",
+                    session_id=session_id,
+                    state={}
+                )
+            except Exception as e:
+                logger.warning(f"Session creation issue for CapacityAgent: {e}")
+
+            # Build request
+            request_content = adk_types.Content(
+                role="user",
+                parts=[adk_types.Part(text=f"{conversation_history}")]
+            )
+            # Run agent
+            events_async = self.runner.run_async(
+                user_id="default_user",
+                session_id=session_id,
+                new_message=request_content
+            )
+
+            final_message = "No response generated."
+
+            async for event in events_async:
+                if event.is_final_response() and event.content and event.content.role == "model":
+                    if event.content.parts and event.content.parts[0].text:
+                        final_message = event.content.parts[0].text
+                        logger.info(f"Agent response: {final_message}")
+
+            return {
+                "message": final_message,
+                "status": "success",
+                "session_id": session_id
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing task: {e}")
+            return {
+                "message": f"Error: {str(e)}",
+                "status": "error"
+            }
+
+
+class TaskManager_RiskAgent:
+    """Minimal Task Manager for running tasks with the Risk Analyst Agent."""
+
+    def __init__(self, agent):
+        logger.info(f"Initializing TaskManager for agent: RiskAgentApp")
+        self.agent = agent
+
+        # Initialize services
+        self.session_service = InMemorySessionService()
+        self.artifact_service = InMemoryArtifactService()
+
+        # Runner
+        self.runner = Runner(
+            agent=self.agent,
+            app_name="RiskAgentApp",
+            session_service=self.session_service,
+            artifact_service=self.artifact_service
+        )
+        logger.info(f"ADK Runner initialized for app '{self.runner.app_name}'")
+
+    async def process_task(self, message: str, context: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            # Create session if not exists
+            # Create or generate session
+            if not session_id:
+                session_id = str(uuid.uuid4())
+
+            conversation_history = context.get("conversationHistory", [])
+
+            logger.info(f"CONVERSATION HISTORY: {conversation_history}")
+
+            # Create session
+            try:
+                await self.session_service.create_session(
+                    app_name="RiskAgentApp", # Use the correct app_name for RiskAgent
+                    user_id="default_user",
+                    session_id=session_id,
+                    state={}
+                )
+            except Exception as e:
+                logger.warning(f"Session creation issue for RiskAgent: {e}")
+
+            # Build request
+            request_content = adk_types.Content(
+                role="user",
+                parts=[adk_types.Part(text=f"{conversation_history}")]
+            )
+            # Run agent
+            events_async = self.runner.run_async(
+                user_id="default_user",
+                session_id=session_id,
+                new_message=request_content
+            )
+
+            final_message = "No response generated."
+
+            async for event in events_async:
+                if event.is_final_response() and event.content and event.content.role == "model":
+                    if event.content.parts and event.content.parts[0].text:
+                        final_message = event.content.parts[0].text
+                        logger.info(f"Agent response: {final_message}")
+
+            return {
+                "message": final_message,
+                "status": "success",
+                "session_id": session_id
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing task: {e}")
+            return {
+                "message": f"Error: {str(e)}",
+                "status": "error"
+            }
+
+
+class TaskManager_EngagementAgent:
+    """Minimal Task Manager for running tasks with the Engagement Planner Agent."""
+
+    def __init__(self, agent):
+        logger.info(f"Initializing TaskManager for agent: EngagementPlannerApp")
+        self.agent = agent
+
+        # Initialize services
+        self.session_service = InMemorySessionService()
+        self.artifact_service = InMemoryArtifactService()
+
+        # Runner
+        self.runner = Runner(
+            agent=self.agent,
+            app_name="EngagementPlannerApp",
+            session_service=self.session_service,
+            artifact_service=self.artifact_service
+        )
+        logger.info(f"ADK Runner initialized for app '{self.runner.app_name}'")
+
+    async def process_task(self, message: str, context: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            # Create session if not exists
+            # Create or generate session
+            if not session_id:
+                session_id = str(uuid.uuid4())
+
+            conversation_history = context.get("conversationHistory", [])
+
+            logger.info(f"CONVERSATION HISTORY: {conversation_history}")
+
+            # Create session
+            try:
+                await self.session_service.create_session(
+                    app_name="EngagementPlannerApp", # Use the correct app_name for EngagementPlanner
+                    user_id="default_user",
+                    session_id=session_id,
+                    state={}
+                )
+            except Exception as e:
+                logger.warning(f"Session creation issue for RiskAgent: {e}")
+
+            # Build request
+            request_content = adk_types.Content(
+                role="user",
+                parts=[adk_types.Part(text=f"{conversation_history}")]
+            )
+            # Run agent
+            events_async = self.runner.run_async(
+                user_id="default_user",
+                session_id=session_id,
+                new_message=request_content
+            )
+
+            final_message = "No response generated."
+
+            async for event in events_async:
+                if event.is_final_response() and event.content and event.content.role == "model":
+                    if event.content.parts and event.content.parts[0].text:
+                        final_message = event.content.parts[0].text
+                        logger.info(f"Agent response: {final_message}")
+
+            return {
+                "message": final_message,
+                "status": "success",
+                "session_id": session_id
+            }
+
+        except Exception as e:
+            logger.error(f"Error processing task: {e}")
+            return {
+                "message": f"Error: {str(e)}",
+                "status": "error"
+            }
