@@ -2,11 +2,14 @@ import React from 'react';
 
 const MessageFormatter = ({ message, onRadioSelection }) => {
   if (!message) return '';
+
+  const normalizedMessage = message.replace(/\\n/g, '\n');
+
   
   // Check if the message contains HTML tags
-  if (message.includes('<') && message.includes('>')) {
-    let cleanedHtml = message;
-    
+  if (normalizedMessage.includes('<') && normalizedMessage.includes('>')) {
+    let cleanedHtml = normalizedMessage;
+
     // Remove submit buttons from forms
     cleanedHtml = cleanedHtml.replace(/<input[^>]*type=["']submit["'][^>]*>/gi, '');
     
@@ -38,7 +41,7 @@ const MessageFormatter = ({ message, onRadioSelection }) => {
   }
   
   // Original formatting logic for non-HTML messages (markdown-style)
-  const lines = message.split('\n');
+  const lines = normalizedMessage.split('\n');
   const formattedLines = lines.map((line, index) => {
     let formattedLine = line;
     

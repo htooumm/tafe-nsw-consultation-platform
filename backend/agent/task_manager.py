@@ -805,14 +805,14 @@ class TaskManager:
             # Analyze conversation stage using enhanced tracker
             stage_analysis = ConsultationStageTracker.analyze_conversation_stage(message, conversation_history)
             
-            # Build comprehensive system instruction
-            system_instruction = self._build_riley_context(
-                current_message=message, 
-                context=context, 
-                department=department, 
-                conversation_history=conversation_history,
-                stage_analysis=stage_analysis
-            )
+            # # Build comprehensive system instruction
+            # system_instruction = self._build_riley_context(
+            #     current_message=message, 
+            #     context=context, 
+            #     department=department, 
+            #     conversation_history=conversation_history,
+            #     stage_analysis=stage_analysis
+            # )
             
             # Create or generate session
             if not session_id:
@@ -829,12 +829,17 @@ class TaskManager:
             except Exception as e:
                 logger.warning(f"Session creation issue: {e}")
             
+            user_name = context.get('name', 'there')
+            user_role = context.get('role', 'unknown role')
+
             # Create user message with comprehensive system instruction
             request_content = adk_types.Content(
                 role="user",
-                parts=[adk_types.Part(text=system_instruction)]
+                parts=[adk_types.Part(text=f"{conversation_history}\nUser's Name: {user_name}\nUser's Role: {user_role}\nUser's Department: {department}\nCurrent Message: {message}")]
             )
-            
+
+            logger.info(f"CONVERSATION HISTORY: {conversation_history}")
+
             # Run the agent
             events_async = self.runner.run_async(
                 user_id=user_id,
