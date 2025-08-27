@@ -437,7 +437,7 @@ const RiskRegister = ({ onBack }) => {
                       : 'bg-gray-100 text-gray-900'
                   }`}>
                     {msg.sender === 'ai' && (
-                      <div className="text-xs text-gray-600 mb-2 font-medium">Morgan</div>
+                      <div className="text-xs text-gray-600 mb-2 font-medium">Alex</div>
                     )}
                     <div className="text-sm">
                       {msg.sender === 'ai' ? (
