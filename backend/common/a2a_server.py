@@ -10,7 +10,7 @@ from typing import Dict, Any, Callable, Optional
 
 from fastapi import FastAPI, Body, HTTPException, Request
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware # Import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 class AgentRequest(BaseModel):
@@ -51,14 +51,45 @@ def create_agent_server(
     """
     app = FastAPI(title=f"{name} Agent", description=description)
     
-    # Add CORS middleware
+    # Add CORS middleware FIRST - this is critical for CORS to work properly
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allows all origins
+        allow_origins=[
+            "https://tafe-nsw-consultation-platform.vercel.app",  # Your Vercel frontend
+            "https://tafe-nsws-consultation-backend.onrender.com",  # Your backend domain
+            "http://localhost:3000",  # Local development
+            "http://localhost:3001",  # Alternative local port
+            "http://127.0.0.1:3000",  # Alternative localhost
+            "*"  # Temporary - allows all origins for debugging
+        ],
         allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, OPTIONS, etc.)
-        allow_headers=["*"],  # Allows all headers
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+        allow_headers=[
+            "Accept",
+            "Accept-Language",
+            "Content-Language",
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+        ],
     )
+
+    # Add explicit OPTIONS handler for preflight requests
+    @app.options("/{path:path}")
+    async def options_handler(request: Request, path: str):
+        """Handle preflight OPTIONS requests explicitly."""
+        return JSONResponse(
+            content={},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+                "Access-Control-Allow-Credentials": "true",
+            }
+        )
 
     # Create .well-known directory if it doesn't exist
     if well_known_path is None:
@@ -164,12 +195,17 @@ def create_agent_server(
                 session_id=request.session_id
             )
 
-
     # Health check endpoint
     @app.get("/health")
     async def health_check():
         """Health check endpoint."""
         return {"status": "healthy", "agent": name}
+    
+    # CORS test endpoint
+    @app.get("/cors-test")
+    async def cors_test():
+        """Test CORS configuration."""
+        return {"message": "CORS is working", "timestamp": "2025-01-01"}
     
     # Metadata endpoint
     @app.get("/.well-known/agent.json")
@@ -185,7 +221,7 @@ def create_agent_server(
         return {
             "agent_name": name,
             "app_name": task_manager.runner.app_name if hasattr(task_manager, 'runner') else "unknown",
-            "available_endpoints": ["run", "health", "debug", ".well-known/agent.json"] + (list(endpoints.keys()) if endpoints else [])
+            "available_endpoints": ["run", "health", "debug", "cors-test", ".well-known/agent.json"] + (list(endpoints.keys()) if endpoints else [])
         }
     
     # Register additional endpoints if provided
