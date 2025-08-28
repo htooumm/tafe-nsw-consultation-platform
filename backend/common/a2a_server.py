@@ -8,7 +8,7 @@ import json
 import inspect
 from typing import Dict, Any, Callable, Optional
 
-from fastapi import FastAPI, Body, HTTPException, Request
+from fastapi import FastAPI, Body, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -51,45 +51,27 @@ def create_agent_server(
     """
     app = FastAPI(title=f"{name} Agent", description=description)
     
-    # Add CORS middleware FIRST - this is critical for CORS to work properly
+    # CRITICAL: Add CORS middleware with VERY permissive settings first
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "https://tafe-nsw-consultation-platform.vercel.app",  # Your Vercel frontend
-            "https://tafe-nsws-consultation-backend.onrender.com",  # Your backend domain
-            "http://localhost:3000",  # Local development
-            "http://localhost:3001",  # Alternative local port
-            "http://127.0.0.1:3000",  # Alternative localhost
-            "*"  # Temporary - allows all origins for debugging
-        ],
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
-        allow_headers=[
-            "Accept",
-            "Accept-Language",
-            "Content-Language",
-            "Content-Type",
-            "Authorization",
-            "X-Requested-With",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers",
-        ],
+        allow_origins=["*"],  # Allow ALL origins temporarily
+        allow_credentials=False,  # Set to False when using wildcard
+        allow_methods=["*"],  # Allow ALL methods
+        allow_headers=["*"],  # Allow ALL headers
     )
-
-    # Add explicit OPTIONS handler for preflight requests
-    @app.options("/{path:path}")
-    async def options_handler(request: Request, path: str):
-        """Handle preflight OPTIONS requests explicitly."""
-        return JSONResponse(
-            content={},
-            headers={
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
-                "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-                "Access-Control-Allow-Credentials": "true",
-            }
-        )
+    
+    # Add a middleware to manually add CORS headers to ALL responses
+    @app.middleware("http")
+    async def add_cors_headers(request: Request, call_next):
+        response = await call_next(request)
+        
+        # Add CORS headers to every response
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, Origin"
+        response.headers["Access-Control-Max-Age"] = "86400"
+        
+        return response
 
     # Create .well-known directory if it doesn't exist
     if well_known_path is None:
@@ -205,7 +187,7 @@ def create_agent_server(
     @app.get("/cors-test")
     async def cors_test():
         """Test CORS configuration."""
-        return {"message": "CORS is working", "timestamp": "2025-01-01"}
+        return {"message": "CORS is working", "timestamp": "2025-01-01", "cors": "enabled"}
     
     # Metadata endpoint
     @app.get("/.well-known/agent.json")
