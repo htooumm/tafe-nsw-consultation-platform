@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'; // Import useRef and
 import { AIService } from '../services/aiService';
 import { DataService } from '../services/supabase';
 import { Send, Download, Save, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import html2pdf from 'html2pdf.js';
 
 const RiskRegister = ({ onBack }) => {
   const [currentStep, setCurrentStep] = useState('intro');
@@ -25,71 +26,94 @@ const RiskRegister = ({ onBack }) => {
 
   // Message formatting component
   const FormattedMessage = ({ message }) => {
-    const formatMessage = (text) => {
-      // Split by double newlines for paragraphs
-      const paragraphs = text.split('\n\n');
-      
-      return paragraphs.map((paragraph, pIndex) => {
-        if (!paragraph.trim()) return null;
-        
-        // Handle lists (lines starting with * or -)
-        if (paragraph.includes('\n*') || paragraph.includes('\n-')) {
-          const lines = paragraph.split('\n');
-          const beforeList = [];
-          const listItems = [];
-          let inList = false;
-          
-          lines.forEach(line => {
-            if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
-              inList = true;
-              listItems.push(line.replace(/^[\s*-]+/, '').trim());
-            } else if (!inList) {
-              beforeList.push(line);
-            }
-          });
-          
-          return (
-            <div key={pIndex} className="mb-4">
-              {beforeList.length > 0 && (
-                <p className="mb-2">{formatInlineText(beforeList.join(' '))}</p>
-              )}
-              {listItems.length > 0 && (
-                <ul className="list-disc ml-4 space-y-1">
-                  {listItems.map((item, idx) => (
-                    <li key={idx} className="text-sm">{formatInlineText(item)}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        }
-        
-        // Regular paragraph
-        return (
-          <p key={pIndex} className="mb-3 leading-relaxed">
-            {formatInlineText(paragraph)}
-          </p>
-        );
-      }).filter(Boolean);
-    };
-    
-    const formatInlineText = (text) => {
-      // Handle **bold** text
-      return text.split(/(\*\*.*?\*\*)/).map((part, index) => {
+    if (!message) return null;
+
+    // Convert escaped \n to real newlines
+    const text = message.replace(/\\n/g, '\n');
+
+    // Function to handle inline formatting: bold (**text**) and italic (*text*)
+    const formatInlineText = (str) => {
+      const parts = str.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+      return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        if (part.startsWith('*') && part.endsWith('*')) {
+          return <em key={index}>{part.slice(1, -1)}</em>;
         }
         return part;
       });
     };
-    
-    return <div>{formatMessage(message)}</div>;
+
+    // Split into paragraphs by double newlines
+    const paragraphs = text.split(/\n\n+/);
+
+    return (
+      <div className="space-y-3">
+        {paragraphs.map((para, pIndex) => {
+          // Detect numbered heading (e.g., "1. Address Instructor Staffing Gap:")
+          const headingMatch = para.match(/^(\d+)\.\s+(.+)/s);
+          if (headingMatch) {
+            const number = headingMatch[1];
+            const restText = headingMatch[2];
+
+            // Split restText by sub-bullets (* or -)
+            const lines = restText.split('\n').map(l => l.trim()).filter(Boolean);
+            const mainText = [];
+            const bullets = [];
+
+            lines.forEach(line => {
+              if (line.startsWith('*') || line.startsWith('-')) {
+                bullets.push(line.replace(/^[\*\-\s]+/, ''));
+              } else {
+                mainText.push(line);
+              }
+            });
+
+            return (
+              <div key={pIndex} className="mb-4">
+                <p className="font-bold text-gray-900 mb-2">
+                  {number}. {formatInlineText(mainText.join(' '))}
+                </p>
+                {bullets.length > 0 && (
+                  <ul className="list-disc ml-6 space-y-1">
+                    {bullets.map((b, idx) => (
+                      <li key={idx} className="text-sm">
+                        {formatInlineText(b)}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          }
+
+          // Detect normal bulleted list paragraph
+          if (para.startsWith('*') || para.startsWith('-')) {
+            const items = para.split('\n').map(l => l.replace(/^[\*\-\s]+/, '').trim());
+            return (
+              <ul key={pIndex} className="list-disc ml-6 space-y-1">
+                {items.map((item, idx) => (
+                  <li key={idx} className="text-sm">{formatInlineText(item)}</li>
+                ))}
+              </ul>
+            );
+          }
+
+          // Regular paragraph
+          return (
+            <p key={pIndex} className="leading-relaxed text-gray-900">
+              {formatInlineText(para)}
+            </p>
+          );
+        })}
+      </div>
+    );
   };
 
-  // Auto-scroll to bottom when conversation updates
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+ const scrollToBottom = () => {
+    if (messagesEndRef.current && messagesContainerRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   };
 
@@ -293,23 +317,61 @@ const RiskRegister = ({ onBack }) => {
   };
 
   const exportData = () => {
-    const exportData = {
-      stakeholder: stakeholderInfo,
-      consultation_type: 'risk_register',
-      agent: 'alex_risk_specialist',
-      session_id: sessionId,
-      conversation: conversationHistory,
-      identified_risks: identifiedRisks,
-      export_date: new Date().toISOString()
-    };
+    // Get the last AI response from Morgan
+    const lastAiMessage = conversationHistory
+      .filter(msg => msg.sender === 'ai')
+      .pop();
 
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `risk-register-${stakeholderInfo.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
+    if (!lastAiMessage) {
+      alert('No assessment data to export yet.');
+      return;
+    }
+
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Capacity Assessment Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .header { border-bottom: 2px solid #16a34a; padding-bottom: 10px; margin-bottom: 20px; }
+          .stakeholder-info { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: black; }
+          .assessment-content { margin-bottom: 20px; color: black; }
+          h1 { color: #16a34a; }
+          h2 { color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+          .timestamp { color: #6b7280; font-size: 0.9em; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>TAFE NSW Risk Assessment Report</h1>
+          <p class="timestamp">Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div class="stakeholder-info">
+          <h2>Stakeholder Information</h2>
+          <p><strong>Name:</strong> ${stakeholderInfo.name}</p>
+          <p><strong>Role:</strong> ${stakeholderInfo.role}</p>
+          <p><strong>Department:</strong> ${stakeholderInfo.department}</p>
+          ${stakeholderInfo.email ? `<p><strong>Email:</strong> ${stakeholderInfo.email}</p>` : ''}
+        </div>
+        
+        <div class="assessment-content">
+          <h2>Morgan's Assessment</h2>
+          <div>${lastAiMessage.message.replace(/\n/g, '<br>')}</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    html2pdf().from(htmlContent).set({
+      margin: 10,
+      filename: 'TAFE-NSW-Risk-Assessment.pdf',
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    }).save();
+    
   };
 
   if (currentStep === 'intro') {
@@ -433,7 +495,7 @@ const RiskRegister = ({ onBack }) => {
                 <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                     msg.sender === 'user' 
-                      ? 'bg-green-600 text-white' 
+                      ? 'bg-red-600 text-white' 
                       : 'bg-gray-100 text-gray-900'
                   }`}>
                     {msg.sender === 'ai' && (

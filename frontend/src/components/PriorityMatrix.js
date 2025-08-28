@@ -7,6 +7,7 @@ import ConversationPanel from './PriorityMatrix_subcomponents/ConversationPanel'
 import PrioritiesPanel from './PriorityMatrix_subcomponents/PrioritiesPanel';
 import ActionsPanel from './PriorityMatrix_subcomponents/ActionsPanel';
 import { conversationStyles } from '../styles/conversationStyles';
+import html2pdf from 'html2pdf.js';
 
 const PriorityMatrix = ({ onBack }) => {
   const [currentStep, setCurrentStep] = useState('intro');
@@ -375,21 +376,60 @@ const PriorityMatrix = ({ onBack }) => {
   };
 
   const exportData = () => {
-    const exportData = {
-      stakeholder: stakeholderInfo,
-      consultation_type: 'priority_discovery',
-      conversation: conversationHistory,
-      discovered_priorities: discoveredPriorities,
-      export_date: new Date().toISOString()
-    };
+    const lastAiMessage = conversationHistory
+      .filter(msg => msg.sender === 'ai')
+      .pop();
 
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `priority-consultation-${stakeholderInfo.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
+    if (!lastAiMessage) {
+      alert('No assessment data to export yet.');
+      return;
+    }
+
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Priority Assessment Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+          .header { border-bottom: 2px solid #16a34a; padding-bottom: 10px; margin-bottom: 20px; }
+          .stakeholder-info { background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: black; }
+          .assessment-content { margin-bottom: 20px; color: black; }
+          h1 { color: #16a34a; }
+          h2 { color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+          .timestamp { color: #6b7280; font-size: 0.9em; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>TAFE NSW Priority Assessment Report</h1>
+          <p class="timestamp">Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div class="stakeholder-info">
+          <h2>Stakeholder Information</h2>
+          <p><strong>Name:</strong> ${stakeholderInfo.name}</p>
+          <p><strong>Role:</strong> ${stakeholderInfo.role}</p>
+          <p><strong>Department:</strong> ${stakeholderInfo.department}</p>
+          ${stakeholderInfo.email ? `<p><strong>Email:</strong> ${stakeholderInfo.email}</p>` : ''}
+        </div>
+        
+        <div class="assessment-content">
+          <h2>Riley's Assessment</h2>
+          <div>${lastAiMessage.message.replace(/\n/g, '<br>')}</div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    html2pdf().from(htmlContent).set({
+      margin: 10,
+      filename: 'TAFE-NSW-Priority-Assessment.pdf',
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    }).save();
+    
   };
 
   if (currentStep === 'intro') {
