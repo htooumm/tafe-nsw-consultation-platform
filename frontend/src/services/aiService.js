@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 let openai;
 // const BACKEND_URL = "http://127.0.0.1:8004";
-// const BACKEND_URL = "https://tafe-nsws-consultation-backend.onrender.com";
+const BACKEND_URL = "https://tafe-nsws-consultation-backend.onrender.com";
 
 export class AIService {
   async sendPriorityDiscoveryMessage(userMessage, context) { // Add context parameter
@@ -17,7 +17,7 @@ export class AIService {
         payload.session_id = context.session_id;
       }
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/run`, {
+      const response = await fetch(`${BACKEND_URL}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ export class AIService {
 
   async sendCapacityAssessmentMessage(userMessage, context) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/capacity_agent`, {
+      const response = await fetch(`${BACKEND_URL}/capacity_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export class AIService {
 
   async sendRiskAssessmentMessage(userMessage, context) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/risk_agent`, {
+      const response = await fetch(`${BACKEND_URL}/risk_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ export class AIService {
 
   async sendEngagementPlanningMessage(userMessage, context) {
     try {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/engagement_agent`, {
+      const response = await fetch(`${BACKEND_URL}/engagement_agent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
