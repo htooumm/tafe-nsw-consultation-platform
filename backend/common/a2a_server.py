@@ -51,13 +51,12 @@ def create_agent_server(
     """
     app = FastAPI(title=f"{name} Agent", description=description)
     
-    # Add CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allows all origins
+        allow_origins=["https://tafe-nsw-consultation-platform.vercel.app"],
         allow_credentials=True,
-        allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, OPTIONS, etc.)
-        allow_headers=["*"],  # Allows all headers
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Create .well-known directory if it doesn't exist
