@@ -2,7 +2,9 @@ import OpenAI from 'openai';
 
 let openai;
 // const BACKEND_URL = "http://127.0.0.1:8004";
-const BACKEND_URL = "https://tafe-nsw-consultation-platform-backend.onrender.com";
+// const BACKEND_URL = "https://tafe-nsw-consultation-platform-backend.onrender.com";
+const BACKEND_URL = "https://tafe-nsw-consultation-platform-production.up.railway.app";
+
 
 export class AIService {
   async sendPriorityDiscoveryMessage(userMessage, context) { // Add context parameter
