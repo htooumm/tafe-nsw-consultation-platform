@@ -5,7 +5,6 @@ let openai;
 // const BACKEND_URL = "https://tafe-nsw-consultation-platform-backend.onrender.com";
 const BACKEND_URL = "https://tafe-nsw-consultation-platform-production.up.railway.app";
 
-
 export class AIService {
   async sendPriorityDiscoveryMessage(userMessage, context) { // Add context parameter
     try {
@@ -273,3 +272,4 @@ The stakeholder is a ${context.role} in ${context.department}.`
     return [followUps[Math.floor(Math.random() * followUps.length)]];
   }
 }
+
