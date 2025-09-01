@@ -12,6 +12,8 @@ google-adk  # Replace with the actual package name if different
 selenium
 webdriver-manager
 
+supabase
+
 # For Chrome WebDriver (ensure Chrome is installed)
 
 # Optional: logging is part of stdlib, no need to list
