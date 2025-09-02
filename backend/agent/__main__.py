@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Import TaskManagers and agents
-from .task_manager import TaskManager, TaskManager_CapacityAgent, TaskManager_RiskAgent, TaskManager_EngagementAgent
-from .agent import root_agent, capacity_agent, risk_agent, engagement_agent
+from .task_manager import TaskManager, TaskManager_CapacityAgent, TaskManager_ExternalStakeholderAgent, TaskManager_RiskAgent, TaskManager_EngagementAgent
+from .agent import root_agent, capacity_agent, risk_agent, engagement_agent, external_stakeholder_agent
 from common.a2a_server import create_agent_server
 
 # Configure logging
@@ -34,10 +34,11 @@ task_manager_instance: TaskManager = None
 capacity_task_manager_instance: TaskManager_CapacityAgent = None
 risk_task_manager_instance: TaskManager_RiskAgent = None
 engagement_task_manager_instance: TaskManager_EngagementAgent = None
+external_stakeholder_task_manager_instance: TaskManager_ExternalStakeholderAgent = None
 
 async def main():
     """Initialize and start the Strategic Consultant Agent server."""
-    global task_manager_instance, capacity_task_manager_instance, risk_task_manager_instance, engagement_task_manager_instance
+    global task_manager_instance, capacity_task_manager_instance, risk_task_manager_instance, engagement_task_manager_instance, external_stakeholder_task_manager_instance
 
     logger.info("Starting Strategic Consultant Agent A2A Server initialization...")
 
@@ -46,8 +47,9 @@ async def main():
     capacity_task_manager_instance = TaskManager_CapacityAgent(agent=capacity_agent)
     risk_task_manager_instance = TaskManager_RiskAgent(agent=risk_agent)
     engagement_task_manager_instance = TaskManager_EngagementAgent(agent=engagement_agent)
+    external_stakeholder_task_manager_instance = TaskManager_ExternalStakeholderAgent(agent=external_stakeholder_agent)
 
-    logger.info("TaskManagers initialized (Consultant + Capacity + Risk + Engagement).")
+    logger.info("TaskManagers initialized (Priority + Capacity + Risk + Engagement + ExternalStakeholder).")
 
     # Host/port config
     host = os.getenv("CONSULTANT_A2A_HOST", "0.0.0.0")
@@ -60,7 +62,8 @@ async def main():
         task_manager=task_manager_instance,
         capacity_task_manager=capacity_task_manager_instance,
         risk_task_manager=risk_task_manager_instance,
-        engagement_task_manager=engagement_task_manager_instance
+        engagement_task_manager=engagement_task_manager_instance,
+        external_stakeholder_task_manager=external_stakeholder_task_manager_instance,
     )
 
     logger.info(f"Strategic Consultant Agent A2A server starting on {host}:{port}")
