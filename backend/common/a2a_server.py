@@ -35,6 +35,7 @@ def create_agent_server(
     capacity_task_manager: Optional[Any] = None,
     risk_task_manager: Optional[Any] = None,
     engagement_task_manager: Optional[Any] = None,
+    delivery_staff_task_manager: Optional[Any] = None,
     external_stakeholder_task_manager: Optional[Any] = None
 ) -> FastAPI:
     """
@@ -184,6 +185,26 @@ def create_agent_server(
             if not external_stakeholder_task_manager:
                 raise ValueError("ExternalStakeholderAgent TaskManager not configured")
             result = await external_stakeholder_task_manager.process_task(request.message, request.context, request.session_id)
+            return AgentResponse(
+                message=result.get("message", "Task completed"),
+                status=result.get("status", "success"),
+                data=result.get("data", {}),
+                session_id=result.get("session_id", request.session_id)
+            )
+        except Exception as e:
+            return AgentResponse(
+                message=f"Error processing request: {str(e)}",
+                status="error",
+                data={"error_type": type(e).__name__},
+                session_id=request.session_id
+            )
+        
+    @app.post("/delivery_staff_agent", response_model=AgentResponse)
+    async def delivery_staff_agent(request: AgentRequest = Body(...)):
+        try:
+            if not delivery_staff_task_manager:
+                raise ValueError("DeliveryStaffAgent TaskManager not configured")
+            result = await delivery_staff_task_manager.process_task(request.message, request.context, request.session_id)
             return AgentResponse(
                 message=result.get("message", "Task completed"),
                 status=result.get("status", "success"),
